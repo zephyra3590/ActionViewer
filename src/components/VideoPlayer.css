@@ -1,0 +1,11 @@
+.video-player {
+    width: 100%;
+    background-color: #000;
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  
+  .video-player video {
+    display: block;
+    width: 100%;
+  }

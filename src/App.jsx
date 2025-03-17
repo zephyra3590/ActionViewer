@@ -1,35 +1,48 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState, useEffect } from 'react';
+import VideoPlayer from './components/VideoPlayer';
+import ActionList from './components/ActionList';
+import videoData from './data/videoData.json';
+import './App.css';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [currentFrame, setCurrentFrame] = useState(null);
+  const [videoUrl, setVideoUrl] = useState('');
+  
+  useEffect(() => {
+    // In a real app, you might need to adjust this URL to where your video is hosted
+    // For local development, you can put the video in the public folder
+    setVideoUrl(`/${videoData.gts[0].url}`);
+  }, []);
+
+  const handleActionClick = (startFrame) => {
+    setCurrentFrame(startFrame);
+  };
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    <div className="app">
+      <header>
+        <h1>视频动作播放器</h1>
+      </header>
+      <main>
+        <div className="content">
+          <div className="video-container">
+            <VideoPlayer 
+              videoUrl={videoUrl} 
+              currentFrame={currentFrame} 
+              fps={videoData.fps} 
+            />
+          </div>
+          <div className="sidebar">
+            <ActionList 
+              actions={videoData.gts[0].actions} 
+              onActionClick={handleActionClick} 
+              fps={videoData.fps}
+            />
+          </div>
+        </div>
+      </main>
+    </div>
+  );
 }
 
-export default App
+export default App;
