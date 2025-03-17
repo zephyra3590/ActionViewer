@@ -26,3 +26,43 @@ header {
     flex-direction: column;
   }
 }
+
+.upload-container {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.upload-button {
+  position: relative;
+}
+
+.upload-button label {
+  display: inline-block;
+  padding: 10px 20px;
+  background-color: #4CAF50;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  transition: background-color 0.3s;
+}
+
+.upload-button label:hover {
+  background-color: #45a049;
+}
+
+.upload-button input[type="file"] {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+}
+
+.instructions {
+  text-align: center;
+  padding: 40px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  margin-top: 20px;
+}
