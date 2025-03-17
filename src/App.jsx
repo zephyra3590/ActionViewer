@@ -8,17 +8,23 @@ function App() {
   const [videoFile, setVideoFile] = useState(null);
   const [videoUrl, setVideoUrl] = useState('');
   const [videoData, setVideoData] = useState(null);
-  
+
+  // Add these state variables to App.jsx
+  const [videoFileName, setVideoFileName] = useState('');
+  const [jsonFileName, setJsonFileName] = useState('');
+
+  // Update the upload handlers
   const handleVideoUpload = (event) => {
     const file = event.target.files[0];
     if (file && file.type.startsWith('video/')) {
       setVideoFile(file);
+      setVideoFileName(file.name);
       const url = URL.createObjectURL(file);
       setVideoUrl(url);
     } else {
       alert('请上传有效的视频文件');
     }
-  };
+  };  
 
   // Add this function to App.jsx
   const validateJsonData = (data) => {
@@ -37,6 +43,7 @@ function App() {
   const handleJsonUpload = (event) => {
     const file = event.target.files[0];
     if (file && file.type === 'application/json') {
+      setJsonFileName(file.name);
       const reader = new FileReader();
       reader.onload = (e) => {
         try {
@@ -75,6 +82,7 @@ function App() {
             accept="video/*" 
             onChange={handleVideoUpload} 
           />
+          {videoFileName && <div className="file-name">{videoFileName}</div>}
         </div>
         <div className="upload-button">
           <label htmlFor="json-upload">上传JSON</label>
@@ -84,6 +92,7 @@ function App() {
             accept="application/json" 
             onChange={handleJsonUpload} 
           />
+          {jsonFileName && <div className="file-name">{jsonFileName}</div>}
         </div>
       </div>
       <main>
