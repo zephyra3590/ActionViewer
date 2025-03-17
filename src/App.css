@@ -66,3 +66,10 @@ header {
   border-radius: 8px;
   margin-top: 20px;
 }
+
+.file-name {
+  margin-top: 8px;
+  font-size: 0.9em;
+  color: #666;
+  word-break: break-all;
+}
