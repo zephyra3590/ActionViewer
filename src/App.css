@@ -11,19 +11,35 @@ header {
 .content {
   display: flex;
   gap: 24px;
+  height: calc(100vh - 200px); /* 设置一个合适的高度，减去头部和其他元素的高度 */
+  min-height: 400px; /* 设置最小高度 */
 }
 
 .video-container {
   flex: 2;
+  height: 100%; /* 确保视频容器占据全部高度 */
+  display: flex;
+  flex-direction: column;
 }
 
 .sidebar {
   flex: 1;
+  height: 100%; /* 确保侧边栏占据全部高度 */
+  overflow: hidden; /* 防止内容溢出 */
 }
 
 @media (max-width: 768px) {
   .content {
     flex-direction: column;
+    height: auto;
+  }
+  
+  .video-container, .sidebar {
+    height: auto;
+  }
+  
+  .sidebar {
+    height: 300px; /* 在移动视图中设置一个固定高度 */
   }
 }
 
