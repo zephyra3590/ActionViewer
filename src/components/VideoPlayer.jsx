@@ -7,7 +7,7 @@ const VideoPlayer = ({ videoUrl, currentFrame, fps }) => {
   useEffect(() => {
     if (videoRef.current && currentFrame !== null) {
       // Convert frame to time in seconds
-      const timeInSeconds = currentFrame / fps;
+      const timeInSeconds = currentFrame; // / fps;
       videoRef.current.currentTime = timeInSeconds;
     }
   }, [currentFrame, fps]);
