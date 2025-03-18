@@ -8,12 +8,11 @@ function App() {
   const [videoFile, setVideoFile] = useState(null);
   const [videoUrl, setVideoUrl] = useState('');
   const [videoData, setVideoData] = useState(null);
-
-  // Add these state variables to App.jsx
   const [videoFileName, setVideoFileName] = useState('');
   const [jsonFileName, setJsonFileName] = useState('');
+  const [actions, setActions] = useState([]);
+  const [fps, setFps] = useState(30);
 
-  // Update the upload handlers
   const handleVideoUpload = (event) => {
     const file = event.target.files[0];
     if (file && file.type.startsWith('video/')) {
@@ -24,22 +23,53 @@ function App() {
     } else {
       alert('请上传有效的视频文件');
     }
-  };  
-
-  // Add this function to App.jsx
-  const validateJsonData = (data) => {
-    if (!data.fps || !data.gts || !Array.isArray(data.gts)) {
-      return false;
-    }
-    
-    if (data.gts.length === 0 || !data.gts[0].actions || !Array.isArray(data.gts[0].actions)) {
-      return false;
-    }
-    
-    return true;
   };
 
-  // Then modify the handleJsonUpload function:
+  const validateJsonData = (data) => {
+    // First format: { fps, gts: [{ actions: [...] }] }
+    if (data.fps && data.gts && Array.isArray(data.gts)) {
+      if (data.gts.length > 0 && data.gts[0].actions && Array.isArray(data.gts[0].actions)) {
+        return 'format1';
+      }
+    }
+    
+    // Second format: [{ action_results: [...] }]
+    if (Array.isArray(data) && data.length > 0 && data[0].action_results && Array.isArray(data[0].action_results)) {
+      return 'format2';
+    }
+    
+    return false;
+  };
+
+  const processJsonData = (data, format) => {
+    if (format === 'format1') {
+      setFps(data.fps || 30);
+      setActions(data.gts[0].actions);
+      return data;
+    } else if (format === 'format2') {
+      // Transform action_results to match the expected format
+      const transformedActions = data[0].action_results.map(action => ({
+        start_id: action.start_time,
+        end_id: action.end_time,
+        label_names: [action.label_name],
+        // Add any other required fields
+        score: action.classify_score
+      }));
+      
+      setFps(30); // Default fps if not provided
+      setActions(transformedActions);
+      
+      // Create a compatible data structure
+      return {
+        fps: 30,
+        gts: [{
+          actions: transformedActions
+        }]
+      };
+    }
+    return null;
+  };
+
   const handleJsonUpload = (event) => {
     const file = event.target.files[0];
     if (file && file.type === 'application/json') {
@@ -48,8 +78,11 @@ function App() {
       reader.onload = (e) => {
         try {
           const data = JSON.parse(e.target.result);
-          if (validateJsonData(data)) {
-            setVideoData(data);
+          const format = validateJsonData(data);
+          
+          if (format) {
+            const processedData = processJsonData(data, format);
+            setVideoData(processedData);
           } else {
             alert('JSON 格式不正确，请检查数据结构');
           }
@@ -62,7 +95,7 @@ function App() {
     } else {
       alert('请上传有效的 JSON 文件');
     }
-  };  
+  };
   
   const handleActionClick = (startFrame) => {
     setCurrentFrame(startFrame);
@@ -102,21 +135,21 @@ function App() {
               <VideoPlayer 
                 videoUrl={videoUrl} 
                 currentFrame={currentFrame} 
-                fps={videoData?.fps || 30} 
+                fps={fps} 
               />
             </div>
-            {videoData && (
+            {actions.length > 0 && (
               <div className="sidebar">
                 <ActionList 
-                  actions={videoData.gts[0].actions} 
+                  actions={actions} 
                   onActionClick={handleActionClick} 
-                  fps={videoData.fps}
+                  fps={fps}
                 />
               </div>
             )}
           </div>
         )}
-        {!videoUrl && !videoData && (
+        {!videoUrl && (
           <div className="instructions">
             <p>请上传视频文件和 JSON 文件以开始</p>
           </div>
