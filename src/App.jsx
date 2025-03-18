@@ -21,7 +21,7 @@ function App() {
       const url = URL.createObjectURL(file);
       setVideoUrl(url);
     } else {
-      alert('请上传有效的视频文件');
+      alert('Please upload a valid video file');
     }
   };
 
@@ -84,16 +84,16 @@ function App() {
             const processedData = processJsonData(data, format);
             setVideoData(processedData);
           } else {
-            alert('JSON 格式不正确，请检查数据结构');
+            alert('Invalid JSON format, please check the data structure');
           }
         } catch (error) {
-          console.error('JSON 解析错误:', error);
-          alert('无效的 JSON 文件');
+          console.error('JSON parsing error:', error);
+          alert('Invalid JSON file');
         }
       };
       reader.readAsText(file);
     } else {
-      alert('请上传有效的 JSON 文件');
+      alert('Please upload a valid JSON file');
     }
   };
   
@@ -104,11 +104,11 @@ function App() {
   return (
     <div className="app">
       <header>
-        <h1>视频动作播放器</h1>
+        <h1>Video Action Player</h1>
       </header>
       <div className="upload-container">
         <div className="upload-button">
-          <label htmlFor="video-upload">上传视频</label>
+          <label htmlFor="video-upload">Upload Video</label>
           <input 
             type="file" 
             id="video-upload" 
@@ -118,7 +118,7 @@ function App() {
           {videoFileName && <div className="file-name">{videoFileName}</div>}
         </div>
         <div className="upload-button">
-          <label htmlFor="json-upload">上传JSON</label>
+          <label htmlFor="json-upload">Upload JSON</label>
           <input 
             type="file" 
             id="json-upload" 
@@ -151,7 +151,7 @@ function App() {
         )}
         {!videoUrl && (
           <div className="instructions">
-            <p>请上传视频文件和 JSON 文件以开始</p>
+            <p>Please upload a video file and JSON file to start</p>
           </div>
         )}
       </main>

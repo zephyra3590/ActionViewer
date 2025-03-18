@@ -15,7 +15,7 @@ const ActionList = ({ actions, onActionClick, fps }) => {
   
   return (
     <div className="action-list">
-      <h2>动作列表</h2>
+      <h2>Action List</h2>
       <ul>
         {actions.map((action, index) => (
           <li 
