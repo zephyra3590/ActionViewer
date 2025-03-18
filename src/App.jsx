@@ -108,7 +108,7 @@ function App() {
       </header>
       <div className="upload-container">
         <div className="upload-button">
-          <label htmlFor="video-upload">Upload Video</label>
+          <label htmlFor="video-upload">Select Video</label>
           <input 
             type="file" 
             id="video-upload" 
