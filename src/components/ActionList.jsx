@@ -7,7 +7,7 @@ const ActionList = ({ actions, onActionClick, fps }) => {
   
   // Function to format frame to time
   const frameToTime = (frame) => {
-    const totalSeconds = Math.floor(frame / fps) || Math.floor(frame);
+    const totalSeconds = frame; // Math.floor(frame / fps) || Math.floor(frame);
     const minutes = Math.floor(totalSeconds / 60);
     const seconds = totalSeconds % 60;
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
