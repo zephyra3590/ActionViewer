@@ -13,6 +13,10 @@ function App() {
   const [actions, setActions] = useState([]);
   const [fps, setFps] = useState(30);
 
+  // Define version and build time
+  const VERSION = "1.0.0";
+  const BUILD_TIME = new Date().toLocaleString(); // Current date and time
+
   const handleVideoUpload = (event) => {
     const file = event.target.files[0];
     if (file && file.type.startsWith('video/')) {
@@ -100,7 +104,7 @@ function App() {
   const handleActionClick = (startFrame) => {
     setCurrentFrame(startFrame);
   };
-  
+
   return (
     <div className="app">
       <header>
@@ -155,6 +159,9 @@ function App() {
           </div>
         )}
       </main>
+      <footer className="app-footer">
+        <p>Version {VERSION} - Built on {BUILD_TIME}</p>
+      </footer>
     </div>
   );
 }
