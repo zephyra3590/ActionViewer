@@ -162,11 +162,11 @@ function App() {
           />
           {videoFileName && <div className="file-name">{videoFileName}</div>}
         </div>
-        <div className="analyze-button">
+        <div className="upload-button">
           <button 
             onClick={analyzeVideo} 
             disabled={isUploading || !videoFile}
-            className={isUploading ? "loading" : ""}
+            className={isUploading ? "analyze-btn loading" : "analyze-btn"}
           >
             {isUploading ? "Uploading..." : "Analyze Video"}
           </button>

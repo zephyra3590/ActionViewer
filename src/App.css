@@ -90,6 +90,7 @@ header {
   cursor: pointer;
   font-weight: bold;
   transition: background-color 0.3s;
+  font-size: 16px;
 }
 
 .upload-button label:hover {
@@ -103,33 +104,41 @@ header {
   opacity: 0;
 }
 
-.analyze-button button {
+/* Fix the Analyze Video button to match exactly */
+.upload-button .analyze-btn {
+  display: inline-block;
   padding: 10px 20px;
-  background-color: #2196F3;
+  background-color: #4CAF50;
   color: white;
   border: none;
   border-radius: 4px;
   cursor: pointer;
   font-weight: bold;
-  transition: background-color 0.3s, opacity 0.3s;
+  transition: background-color 0.3s;
+  font-size: 16px;
+  width: 100%;
+  text-align: center;
+  box-sizing: border-box;
+  height: 41px; /* Match exact height */
+  line-height: 1.5;
 }
 
-.analyze-button button:hover:not(:disabled) {
-  background-color: #0b7dda;
+.upload-button .analyze-btn:hover:not(:disabled) {
+  background-color: #45a049;
 }
 
-.analyze-button button:disabled {
+.upload-button .analyze-btn:disabled {
   background-color: #cccccc;
   cursor: not-allowed;
   opacity: 0.7;
 }
 
-.analyze-button button.loading {
+.upload-button .analyze-btn.loading {
   position: relative;
   padding-right: 40px;
 }
 
-.analyze-button button.loading:after {
+.upload-button .analyze-btn.loading:after {
   content: "";
   position: absolute;
   right: 10px;
