@@ -37,8 +37,8 @@ function App() {
       }
     }
     
-    // Second format: [{ action_results: [...] }]
-    if (Array.isArray(data) && data.length > 0 && data[0].action_results && Array.isArray(data[0].action_results)) {
+    // Second format: { action_results: [...] } (without outer array)
+    if (data.action_results && Array.isArray(data.action_results)) {
       return 'format2';
     }
     
@@ -51,8 +51,8 @@ function App() {
       setActions(data.gts[0].actions);
       return data;
     } else if (format === 'format2') {
-      // Transform action_results to match the expected format
-      const transformedActions = data[0].action_results.map(action => ({
+      // Transform action_results to match the expected format (without outer array)
+      const transformedActions = data.action_results.map(action => ({
         start_id: action.start_time,
         end_id: action.end_time,
         label_names: [action.label_name],
