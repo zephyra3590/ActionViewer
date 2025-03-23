@@ -12,6 +12,8 @@ function App() {
   const [jsonFileName, setJsonFileName] = useState('');
   const [actions, setActions] = useState([]);
   const [fps, setFps] = useState(30);
+  const [uploadStatus, setUploadStatus] = useState('');
+  const [isUploading, setIsUploading] = useState(false);
 
   // Define version and build time
   const VERSION = "1.0.0";
@@ -105,6 +107,45 @@ function App() {
     setCurrentFrame(startFrame);
   };
 
+  const analyzeVideo = async () => {
+    if (!videoFile) {
+      alert('Please select a video file first');
+      return;
+    }
+
+    setIsUploading(true);
+    setUploadStatus('Uploading file...');
+
+    try {
+      // Create a timestamp with milliseconds for the file name
+      const now = new Date();
+      const timestamp = `${now.getFullYear()}${(now.getMonth() + 1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}_${now.getHours().toString().padStart(2, '0')}${now.getMinutes().toString().padStart(2, '0')}${now.getSeconds().toString().padStart(2, '0')}_${now.getMilliseconds().toString().padStart(3, '0')}`;
+      const newFileName = `${timestamp}_${videoFileName}`;
+      
+      const formData = new FormData();
+      formData.append('video', videoFile);
+      formData.append('fileName', newFileName);
+      
+      // Mock API call - replace with your actual endpoint
+      const response = await fetch('/api/upload-video', {
+        method: 'POST',
+        body: formData
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        setUploadStatus(`Success! ${newFileName} was saved to /home/work/datasets/EuroCup2016/mp4.`);
+      } else {
+        throw new Error('File upload failed');
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      setUploadStatus(`Error uploading file: ${error.message}`);
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
   return (
     <div className="app">
       <header>
@@ -120,6 +161,15 @@ function App() {
             onChange={handleVideoUpload} 
           />
           {videoFileName && <div className="file-name">{videoFileName}</div>}
+        </div>
+        <div className="analyze-button">
+          <button 
+            onClick={analyzeVideo} 
+            disabled={isUploading || !videoFile}
+            className={isUploading ? "loading" : ""}
+          >
+            {isUploading ? "Uploading..." : "Analyze Video"}
+          </button>
         </div>
         <div className="upload-button">
           <label htmlFor="json-upload">Upload JSON</label>
@@ -142,13 +192,20 @@ function App() {
                 fps={fps} 
               />
             </div>
-            {actions.length > 0 && (
+            {actions.length > 0 ? (
               <div className="sidebar">
                 <ActionList 
                   actions={actions} 
                   onActionClick={handleActionClick} 
                   fps={fps}
                 />
+              </div>
+            ) : (
+              <div className="sidebar status-display">
+                <h2>Status</h2>
+                <div className="status-content">
+                  {uploadStatus && <p>{uploadStatus}</p>}
+                </div>
               </div>
             )}
           </div>
