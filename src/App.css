@@ -55,6 +55,16 @@ header {
   border-radius: 4px;
 }
 
+.status-content p.error {
+  background-color: #ffebee;
+  border-left: 4px solid #f44336;
+}
+
+.status-content p.success {
+  background-color: #e8f5e9;
+  border-left: 4px solid #4CAF50;
+}
+
 @media (max-width: 768px) {
   .content {
     flex-direction: column;
@@ -177,4 +187,39 @@ header {
   text-align: center;
   font-size: 0.8em;
   color: #666;
+}
+
+.loading-animation {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  margin-right: 4px;
+  animation: pulse 1.5s infinite ease-in-out;
+}
+
+.loading-animation.dot1 {
+  background-color: #4CAF50;
+  animation-delay: 0s;
+}
+
+.loading-animation.dot2 {
+  background-color: #4CAF50;
+  animation-delay: 0.5s;
+}
+
+.loading-animation.dot3 {
+  background-color: #4CAF50;
+  animation-delay: 1s;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(0.5);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1);
+    opacity: 1;
+  }
 }

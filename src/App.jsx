@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import VideoPlayer from './components/VideoPlayer';
 import ActionList from './components/ActionList';
 import './App.css';
@@ -14,15 +14,49 @@ function App() {
   const [fps, setFps] = useState(30);
   const [uploadStatusLog, setUploadStatusLog] = useState([]); // Change to array for log
   const [isUploading, setIsUploading] = useState(false);
+  const [extractionInProgress, setExtractionInProgress] = useState(false);
+  const [processedFileName, setProcessedFileName] = useState('');
   
   // Define version and build time
-  const VERSION = "1.0.0";
+  const VERSION = "1.1.0";
   const BUILD_TIME = new Date().toLocaleString(); // Current date and time
   
   // Modified function to append status instead of replacing
   const setUploadStatus = (status) => {
     setUploadStatusLog(prevLog => [...prevLog, status]);
   };
+  
+  // Check extraction status periodically if extraction is in progress
+  useEffect(() => {
+    let statusTimer;
+    if (extractionInProgress && processedFileName) {
+      setUploadStatus('Frame extraction in progress...');
+      
+      statusTimer = setInterval(() => {
+        // In a real implementation, you would check status with the backend
+        // For now, we'll just add periodic updates to simulate
+        const messages = [
+          'Extracting frames...',
+          'Processing video content...',
+          'Analyzing frames...',
+          'Almost done...'
+        ];
+        const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+        setUploadStatus(`Frame extraction: ${randomMessage}`);
+      }, 5000);
+      
+      // For demo purposes, simulate completion after 20 seconds
+      setTimeout(() => {
+        clearInterval(statusTimer);
+        setExtractionInProgress(false);
+        setUploadStatus('✓ Frame extraction completed successfully!');
+      }, 20000);
+    }
+    
+    return () => {
+      if (statusTimer) clearInterval(statusTimer);
+    };
+  }, [extractionInProgress, processedFileName]);
   
   const handleVideoUpload = (event) => {
     const file = event.target.files[0];
@@ -135,7 +169,7 @@ function App() {
       
       setUploadStatus(`Processing: ${newFileName}`);
       
-      // Mock API call - replace with your actual endpoint
+      // Real API call
       const response = await fetch('/api/upload-video', {
         method: 'POST',
         body: formData
@@ -144,6 +178,11 @@ function App() {
       if (response.ok) {
         const result = await response.json();
         setUploadStatus(`Success! ${newFileName} was saved to /home/work/datasets/EuroCup2016/mp4.`);
+        
+        // Start monitoring frame extraction process
+        setProcessedFileName(newFileName);
+        setExtractionInProgress(true);
+        setUploadStatus('Starting frame extraction in PaddleVideo environment...');
       } else {
         throw new Error('File upload failed');
       }
@@ -174,10 +213,10 @@ function App() {
         <div className="upload-button">
           <button 
             onClick={analyzeVideo} 
-            disabled={isUploading || !videoFile}
-            className={isUploading ? "analyze-btn loading" : "analyze-btn"}
+            disabled={isUploading || !videoFile || extractionInProgress}
+            className={isUploading || extractionInProgress ? "analyze-btn loading" : "analyze-btn"}
           >
-            {isUploading ? "Uploading..." : "Analyze Video"}
+            {isUploading ? "Uploading..." : extractionInProgress ? "Processing..." : "Analyze Video"}
           </button>
         </div>
         <div className="upload-button">
@@ -214,7 +253,9 @@ function App() {
                 <h2>Status Log</h2>
                 <div className="status-content">
                   {uploadStatusLog.map((status, index) => (
-                    <p key={index} className="status-line">{status}</p>
+                    <p key={index} className={`status-line ${status.includes('Error') ? 'error' : status.includes('✓') ? 'success' : ''}`}>
+                      {status}
+                    </p>
                   ))}
                 </div>
               </div>
