@@ -12,13 +12,18 @@ function App() {
   const [jsonFileName, setJsonFileName] = useState('');
   const [actions, setActions] = useState([]);
   const [fps, setFps] = useState(30);
-  const [uploadStatus, setUploadStatus] = useState('');
+  const [uploadStatusLog, setUploadStatusLog] = useState([]); // Change to array for log
   const [isUploading, setIsUploading] = useState(false);
-
+  
   // Define version and build time
   const VERSION = "1.0.0";
   const BUILD_TIME = new Date().toLocaleString(); // Current date and time
-
+  
+  // Modified function to append status instead of replacing
+  const setUploadStatus = (status) => {
+    setUploadStatusLog(prevLog => [...prevLog, status]);
+  };
+  
   const handleVideoUpload = (event) => {
     const file = event.target.files[0];
     if (file && file.type.startsWith('video/')) {
@@ -26,11 +31,12 @@ function App() {
       setVideoFileName(file.name);
       const url = URL.createObjectURL(file);
       setVideoUrl(url);
+      setUploadStatus(`Video loaded: ${file.name}`);
     } else {
       alert('Please upload a valid video file');
     }
   };
-
+  
   const validateJsonData = (data) => {
     // First format: { fps, gts: [{ actions: [...] }] }
     if (data.fps && data.gts && Array.isArray(data.gts)) {
@@ -46,7 +52,7 @@ function App() {
     
     return false;
   };
-
+  
   const processJsonData = (data, format) => {
     if (format === 'format1') {
       setFps(data.fps || 30);
@@ -75,7 +81,7 @@ function App() {
     }
     return null;
   };
-
+  
   const handleJsonUpload = (event) => {
     const file = event.target.files[0];
     if (file && file.type === 'application/json') {
@@ -89,12 +95,15 @@ function App() {
           if (format) {
             const processedData = processJsonData(data, format);
             setVideoData(processedData);
+            setUploadStatus(`JSON loaded: ${file.name} (${format})`);
           } else {
             alert('Invalid JSON format, please check the data structure');
+            setUploadStatus(`Error: Invalid JSON format in ${file.name}`);
           }
         } catch (error) {
           console.error('JSON parsing error:', error);
           alert('Invalid JSON file');
+          setUploadStatus(`Error: JSON parsing failed for ${file.name}`);
         }
       };
       reader.readAsText(file);
@@ -106,16 +115,14 @@ function App() {
   const handleActionClick = (startFrame) => {
     setCurrentFrame(startFrame);
   };
-
+  
   const analyzeVideo = async () => {
     if (!videoFile) {
       alert('Please select a video file first');
       return;
     }
-
     setIsUploading(true);
     setUploadStatus('Uploading file...');
-
     try {
       // Create a timestamp with milliseconds for the file name
       const now = new Date();
@@ -125,6 +132,8 @@ function App() {
       const formData = new FormData();
       formData.append('video', videoFile);
       formData.append('fileName', newFileName);
+      
+      setUploadStatus(`Processing: ${newFileName}`);
       
       // Mock API call - replace with your actual endpoint
       const response = await fetch('/api/upload-video', {
@@ -145,7 +154,7 @@ function App() {
       setIsUploading(false);
     }
   };
-
+  
   return (
     <div className="app">
       <header>
@@ -202,9 +211,11 @@ function App() {
               </div>
             ) : (
               <div className="sidebar status-display">
-                <h2>Status</h2>
+                <h2>Status Log</h2>
                 <div className="status-content">
-                  {uploadStatus && <p>{uploadStatus}</p>}
+                  {uploadStatusLog.map((status, index) => (
+                    <p key={index} className="status-line">{status}</p>
+                  ))}
                 </div>
               </div>
             )}
