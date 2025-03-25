@@ -15,6 +15,7 @@ function App() {
   const [uploadStatusLog, setUploadStatusLog] = useState([]); // Change to array for log
   const [isUploading, setIsUploading] = useState(false);
   const [extractionInProgress, setExtractionInProgress] = useState(false);
+  const [predictionInProgress, setPredictionInProgress] = useState(false);
   const [processedFileName, setProcessedFileName] = useState('');
   
   // Define version and build time
@@ -26,15 +27,52 @@ function App() {
     setUploadStatusLog(prevLog => [...prevLog, status]);
   };
   
-  // Check extraction status periodically if extraction is in progress
+  // Add useEffect to trigger prediction after frame extraction
+  useEffect(() => {
+    const triggerPrediction = async () => {
+      if (extractionInProgress || !processedFileName) return;
+
+      setPredictionInProgress(true);
+      setUploadStatus('Starting prediction process...');
+
+      try {
+        const response = await fetch('/api/predict', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ fileName: processedFileName })
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          setUploadStatus(`✓ Prediction completed for ${processedFileName}`);
+          // Optionally, you could parse and display the prediction results
+          console.log('Prediction result:', result);
+        } else {
+          throw new Error('Prediction failed');
+        }
+      } catch (error) {
+        console.error('Prediction error:', error);
+        setUploadStatus(`Error during prediction: ${error.message}`);
+      } finally {
+        setPredictionInProgress(false);
+      }
+    };
+
+    // Only trigger prediction if extraction is complete and prediction is not already in progress
+    if (!extractionInProgress && processedFileName && !predictionInProgress) {
+      triggerPrediction();
+    }
+  }, [extractionInProgress, processedFileName, predictionInProgress]);
+  
+  // Existing useEffect for extraction status
   useEffect(() => {
     let statusTimer;
     if (extractionInProgress && processedFileName) {
       setUploadStatus('Frame extraction in progress...');
       
       statusTimer = setInterval(() => {
-        // In a real implementation, you would check status with the backend
-        // For now, we'll just add periodic updates to simulate
         const messages = [
           'Extracting frames...',
           'Processing video content...',
@@ -57,7 +95,7 @@ function App() {
       if (statusTimer) clearInterval(statusTimer);
     };
   }, [extractionInProgress, processedFileName]);
-  
+
   const handleVideoUpload = (event) => {
     const file = event.target.files[0];
     if (file && file.type.startsWith('video/')) {
