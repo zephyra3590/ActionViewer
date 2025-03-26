@@ -17,7 +17,8 @@ function App() {
   const [extractionInProgress, setExtractionInProgress] = useState(false);
   const [predictionInProgress, setPredictionInProgress] = useState(false);
   const [processedFileName, setProcessedFileName] = useState('');
-  
+  const [predictionCompleted, setPredictionCompleted] = useState(false);
+
   // Define version and build time
   const VERSION = "1.1.0";
   const BUILD_TIME = new Date().toLocaleString(); // Current date and time
@@ -27,44 +28,39 @@ function App() {
     setUploadStatusLog(prevLog => [...prevLog, status]);
   };
   
-  // Add useEffect to trigger prediction after frame extraction
-  useEffect(() => {
-    const triggerPrediction = async () => {
-      if (extractionInProgress || !processedFileName) return;
+useEffect(() => {
+  const triggerPrediction = async () => {
+    if (extractionInProgress || !processedFileName || predictionInProgress || predictionCompleted) return;
 
-      setPredictionInProgress(true);
-      setUploadStatus('Starting prediction process...');
+    setPredictionInProgress(true);
+    setUploadStatus('Starting prediction process...');
 
-      try {
-        const response = await fetch('/api/predict', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ fileName: processedFileName })
-        });
+    try {
+      const response = await fetch('/api/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ fileName: processedFileName })
+      });
 
-        if (response.ok) {
-          const result = await response.json();
-          setUploadStatus(`✓ Prediction completed for ${processedFileName}`);
-          // Optionally, you could parse and display the prediction results
-          console.log('Prediction result:', result);
-        } else {
-          throw new Error('Prediction failed');
-        }
-      } catch (error) {
-        console.error('Prediction error:', error);
-        setUploadStatus(`Error during prediction: ${error.message}`);
-      } finally {
-        setPredictionInProgress(false);
+      if (response.ok) {
+        const result = await response.json();
+        setUploadStatus(`✓ Prediction completed for ${processedFileName}`);
+        setPredictionCompleted(true); // 标记预测完成
+      } else {
+        throw new Error('Prediction failed');
       }
-    };
-
-    // Only trigger prediction if extraction is complete and prediction is not already in progress
-    if (!extractionInProgress && processedFileName && !predictionInProgress) {
-      triggerPrediction();
+    } catch (error) {
+      console.error('Prediction error:', error);
+      setUploadStatus(`Error during prediction: ${error.message}`);
+    } finally {
+      setPredictionInProgress(false);
     }
-  }, [extractionInProgress, processedFileName, predictionInProgress]);
+  };
+
+  if (!extractionInProgress && processedFileName && !predictionInProgress && !predictionCompleted) {
+    triggerPrediction();
+  }
+}, [extractionInProgress, processedFileName, predictionInProgress, predictionCompleted]);
   
   // Existing useEffect for extraction status
   useEffect(() => {
