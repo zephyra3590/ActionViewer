@@ -12,57 +12,55 @@ function App() {
   const [jsonFileName, setJsonFileName] = useState('');
   const [actions, setActions] = useState([]);
   const [fps, setFps] = useState(30);
-  const [uploadStatusLog, setUploadStatusLog] = useState([]); // Change to array for log
+  const [uploadStatusLog, setUploadStatusLog] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
   const [extractionInProgress, setExtractionInProgress] = useState(false);
   const [predictionInProgress, setPredictionInProgress] = useState(false);
   const [processedFileName, setProcessedFileName] = useState('');
   const [predictionCompleted, setPredictionCompleted] = useState(false);
+  const [canDownloadJson, setCanDownloadJson] = useState(false);
 
   // Define version and build time
-  const VERSION = "1.1.0";
-  const BUILD_TIME = new Date().toLocaleString(); // Current date and time
+  const VERSION = "1.1.1";
+  const BUILD_TIME = new Date().toLocaleString();
   
-  // Modified function to append status instead of replacing
   const setUploadStatus = (status) => {
     setUploadStatusLog(prevLog => [...prevLog, status]);
   };
   
-useEffect(() => {
-  const triggerPrediction = async () => {
-    if (extractionInProgress || !processedFileName || predictionInProgress || predictionCompleted) return;
-
-    setPredictionInProgress(true);
-    setUploadStatus('Starting prediction process...');
-
-    try {
-      const response = await fetch('/api/predict', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileName: processedFileName })
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        setUploadStatus(`✓ Prediction completed for ${processedFileName}`);
-        setPredictionCompleted(true); // 标记预测完成
-      } else {
-        throw new Error('Prediction failed');
+  useEffect(() => {
+    const triggerPrediction = async () => {
+      if (extractionInProgress || !processedFileName || predictionInProgress || predictionCompleted) return;
+      setPredictionInProgress(true);
+      setUploadStatus('Starting prediction process...');
+      try {
+        const response = await fetch('/api/predict', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ fileName: processedFileName })
+        });
+        
+        if (response.ok) {
+          const result = await response.json();
+          setUploadStatus(`✓ Prediction completed for ${processedFileName}`);
+          setPredictionCompleted(true);
+          setCanDownloadJson(true); // Enable download JSON button
+        } else {
+          throw new Error('Prediction failed');
+        }
+      } catch (error) {
+        console.error('Prediction error:', error);
+        setUploadStatus(`Error during prediction: ${error.message}`);
+      } finally {
+        setPredictionInProgress(false);
       }
-    } catch (error) {
-      console.error('Prediction error:', error);
-      setUploadStatus(`Error during prediction: ${error.message}`);
-    } finally {
-      setPredictionInProgress(false);
+    };
+    
+    if (!extractionInProgress && processedFileName && !predictionInProgress && !predictionCompleted) {
+      triggerPrediction();
     }
-  };
-
-  if (!extractionInProgress && processedFileName && !predictionInProgress && !predictionCompleted) {
-    triggerPrediction();
-  }
-}, [extractionInProgress, processedFileName, predictionInProgress, predictionCompleted]);
+  }, [extractionInProgress, processedFileName, predictionInProgress, predictionCompleted]);
   
-  // Existing useEffect for extraction status
   useEffect(() => {
     let statusTimer;
     if (extractionInProgress && processedFileName) {
@@ -228,6 +226,37 @@ useEffect(() => {
     }
   };
   
+  const handleDownloadJson = async () => {
+    if (!canDownloadJson || !processedFileName) {
+      alert('No JSON file available for download');
+      return;
+    }
+
+    try {
+      // Remove .mp4 extension and replace with .json
+      const jsonFileName = processedFileName.replace('.mp4', '.json');
+      const response = await fetch(`/api/download-json?fileName=${jsonFileName}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to download JSON');
+      }
+      
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = jsonFileName;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Download JSON error:', error);
+      setUploadStatus(`Error downloading JSON: ${error.message}`);
+    }
+  };
+  
   return (
     <div className="app">
       <header>
@@ -251,6 +280,15 @@ useEffect(() => {
             className={isUploading || extractionInProgress ? "analyze-btn loading" : "analyze-btn"}
           >
             {isUploading ? "Uploading..." : extractionInProgress ? "Processing..." : "Analyze Video"}
+          </button>
+        </div>
+        <div className="upload-button">
+          <button
+            onClick={handleDownloadJson}
+            disabled={!canDownloadJson}
+            className="analyze-btn"
+          >
+            Download JSON
           </button>
         </div>
         <div className="upload-button">
