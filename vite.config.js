@@ -8,7 +8,6 @@ export default defineConfig({
     proxy: {
       '/api': 'http://localhost:3000'
     },
-    host: '0.0.0.0',
-    allowedHosts: 'all'
+    allowedHosts: ['ms-7d99.taile1a588.ts.net']
   }
 })
