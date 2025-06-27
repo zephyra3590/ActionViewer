@@ -246,7 +246,7 @@ const RadarChart = ({ actions }) => {
 
   return (
     <div className="radar-chart">
-      <h2>动作成功率分析</h2>
+      <h2>動作成功率の分析</h2>
       <canvas 
         ref={canvasRef} 
         width={600} 
