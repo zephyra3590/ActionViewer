@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import VideoPlayer from './components/VideoPlayer';
 import ActionList from './components/ActionList';
+import RadarChart from './components/RadarChart';
 import './App.css';
 
 function App() {
@@ -21,7 +22,7 @@ function App() {
   const [canDownloadJson, setCanDownloadJson] = useState(false);
 
   // Define version and build time
-  const VERSION = "1.1.1";
+  const VERSION = "1.2.0";
   const BUILD_TIME = new Date().toLocaleString();
   
   const setUploadStatus = (status) => {
@@ -338,6 +339,11 @@ function App() {
           <div className="instructions">
             <p>Please upload a video file and JSON file to start</p>
           </div>
+        )}
+        
+        {/* 添加雷达图显示区域 */}
+        {actions.length > 0 && (
+          <RadarChart actions={actions} />
         )}
       </main>
       <footer className="app-footer">
