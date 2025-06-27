@@ -13,6 +13,7 @@ header {
   gap: 24px;
   height: calc(100vh - 200px); /* 设置一个合适的高度，减去头部和其他元素的高度 */
   min-height: 400px; /* 设置最小高度 */
+  margin-bottom: 20px; /* 为雷达图留出空间 */
 }
 
 .video-container {
