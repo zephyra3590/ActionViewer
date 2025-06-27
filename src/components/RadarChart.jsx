@@ -123,8 +123,7 @@ const RadarChart = ({ actions }) => {
     // 绘制数据
     drawData(ctx, centerX, centerY, radius, successRates, actionKeys, angleStep);
     
-    // 绘制图例
-    drawLegend(ctx, successRates);
+    // 移除了 drawLegend 调用
     
   }, [actions]);
   
@@ -226,24 +225,8 @@ const RadarChart = ({ actions }) => {
     });
   };
   
-  const drawLegend = (ctx, successRates) => {
-    ctx.fillStyle = '#333';
-    ctx.font = '12px Arial';
-    ctx.textAlign = 'left';
-    
-    let legendY = 20;
-    ctx.fillText('动作成功率统计:', 20, legendY);
-    
-    Object.keys(actionLabels).forEach((key, index) => {
-      if (successRates[key] && successRates[key].total > 0) {
-        legendY += 20;
-        const stats = successRates[key];
-        const text = `${actionLabels[key]}: ${stats.success}/${stats.total} (${stats.rate.toFixed(1)}%)`;
-        ctx.fillText(text, 20, legendY);
-      }
-    });
-  };
-
+  // 完全移除了 drawLegend 函数
+  
   return (
     <div className="radar-chart">
       <h2>動作成功率の分析</h2>
