@@ -117,13 +117,11 @@ const RadarChart = ({ actions }) => {
     // 绘制背景网格
     drawGrid(ctx, centerX, centerY, radius, actionKeys.length);
     
-    // 绘制标签
-    drawLabels(ctx, centerX, centerY, radius, actionKeys, angleStep);
+    // 绘制标签（传入成功率数据以获取总次数）
+    drawLabels(ctx, centerX, centerY, radius, actionKeys, angleStep, successRates);
     
     // 绘制数据
     drawData(ctx, centerX, centerY, radius, successRates, actionKeys, angleStep);
-    
-    // 移除了 drawLegend 调用
     
   }, [actions]);
   
@@ -161,7 +159,7 @@ const RadarChart = ({ actions }) => {
     }
   };
   
-  const drawLabels = (ctx, centerX, centerY, radius, actionKeys, angleStep) => {
+  const drawLabels = (ctx, centerX, centerY, radius, actionKeys, angleStep, successRates) => {
     ctx.fillStyle = '#333';
     ctx.font = 'bold 14px Arial';
     
@@ -171,9 +169,15 @@ const RadarChart = ({ actions }) => {
       const x = centerX + labelRadius * Math.cos(angle);
       const y = centerY + labelRadius * Math.sin(angle);
       
+      // 获取该动作的总次数
+      const totalCount = successRates[key] ? successRates[key].total : 0;
+      
+      // 组合标签文本：动作名称 + (总次数)
+      const labelText = `${actionLabels[key]} (${totalCount})`;
+      
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(actionLabels[key], x, y);
+      ctx.fillText(labelText, x, y);
     });
   };
   
@@ -224,8 +228,6 @@ const RadarChart = ({ actions }) => {
       }
     });
   };
-  
-  // 完全移除了 drawLegend 函数
   
   return (
     <div className="radar-chart">
