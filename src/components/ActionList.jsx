@@ -77,7 +77,7 @@ const ActionList = ({ actions, onActionClick, fps }) => {
           
           // 判断动作是否成功
           const isSuccess = checkActionSuccess(action, sortedActions, sortedIndex);
-          const statusIcon = isSuccess ? "⭕️" : "❌";
+          const statusIcon = isSuccess ? "🟢" : "❌";
           
           return (
             <li 
