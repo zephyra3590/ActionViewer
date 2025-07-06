@@ -110,7 +110,7 @@ const PieChart = ({ actions }) => {
     Object.entries(failureCombinations).forEach(([combination, count]) => {
       const percentage = (count / totalFailures) * 100;
       
-      if (percentage >= 10) {
+      if (percentage >= 5) {
         processedData.push({
           label: combination,
           count: count,
@@ -121,7 +121,7 @@ const PieChart = ({ actions }) => {
       }
     });
     
-    // 如果有小于10%的组合，添加【その他】
+    // 如果有小于5%的组合，添加【その他】
     if (othersCount > 0) {
       const othersPercentage = (othersCount / totalFailures) * 100;
       processedData.push({
