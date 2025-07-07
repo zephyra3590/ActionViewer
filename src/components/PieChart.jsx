@@ -98,7 +98,7 @@ const PieChart = ({ actions }) => {
     return failureCombinations;
   };
 
-  // 处理数据，合并小于10%的组合为【その他】
+  // 处理数据，合并小于5%的组合为【その他】
   const processDataForPieChart = (failureCombinations) => {
     const totalFailures = Object.values(failureCombinations).reduce((sum, count) => sum + count, 0);
     
@@ -151,12 +151,16 @@ const PieChart = ({ actions }) => {
     if (!canvas) return;
     
     const ctx = canvas.getContext('2d');
-    const centerX = canvas.width / 2;
-    const centerY = canvas.height / 2;
-    const radius = Math.min(centerX, centerY) - 100;
+    
+    // 使用更大的画布尺寸，调整布局
+    const canvasWidth = canvas.width;
+    const canvasHeight = canvas.height;
+    const centerX = canvasWidth * 0.35; // 将饼图向左移动
+    const centerY = canvasHeight / 2;
+    const radius = Math.min(centerX * 0.8, centerY * 0.8); // 减小半径避免重叠
     
     // 清空画布
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
     
     // 获取失误组合数据
     const failureCombinations = calculateFailureCombinations(actions);
@@ -165,8 +169,9 @@ const PieChart = ({ actions }) => {
     if (pieData.length === 0) {
       // 没有失误数据时显示提示
       ctx.fillStyle = '#666';
-      ctx.font = '16px Arial';
+      ctx.font = '18px Arial';
       ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
       ctx.fillText('失误データがありません', centerX, centerY);
       return;
     }
@@ -189,55 +194,107 @@ const PieChart = ({ actions }) => {
       
       // 绘制边框
       ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 3;
       ctx.stroke();
       
-      // 绘制百分比标签（在扇形中心）
-      const labelAngle = currentAngle + sliceAngle / 2;
-      const labelRadius = radius * 0.7;
-      const labelX = centerX + labelRadius * Math.cos(labelAngle);
-      const labelY = centerY + labelRadius * Math.sin(labelAngle);
-      
-      ctx.fillStyle = '#fff';
-      ctx.font = 'bold 12px Arial';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(`${data.percentage.toFixed(1)}%`, labelX, labelY);
+      // 只有当百分比大于10%时才显示百分比标签
+      if (data.percentage >= 10) {
+        const labelAngle = currentAngle + sliceAngle / 2;
+        const labelRadius = radius * 0.65;
+        const labelX = centerX + labelRadius * Math.cos(labelAngle);
+        const labelY = centerY + labelRadius * Math.sin(labelAngle);
+        
+        // 添加文字背景
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+        ctx.font = 'bold 14px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        const text = `${data.percentage.toFixed(1)}%`;
+        const metrics = ctx.measureText(text);
+        const textWidth = metrics.width;
+        const textHeight = 16;
+        
+        // 绘制背景矩形
+        ctx.fillRect(labelX - textWidth/2 - 4, labelY - textHeight/2 - 2, textWidth + 8, textHeight + 4);
+        
+        // 绘制白色文字
+        ctx.fillStyle = '#fff';
+        ctx.fillText(text, labelX, labelY);
+      }
       
       currentAngle += sliceAngle;
     });
     
-    // 绘制图例
-    drawLegend(ctx, pieData, colors, canvas.width, canvas.height);
+    // 绘制改进的图例
+    drawImprovedLegend(ctx, pieData, colors, canvasWidth, canvasHeight);
     
   }, [actions]);
 
-  const drawLegend = (ctx, pieData, colors, canvasWidth, canvasHeight) => {
-    const legendX = canvasWidth - 220;
-    const legendY = 30;
-    const lineHeight = 25;
+  const drawImprovedLegend = (ctx, pieData, colors, canvasWidth, canvasHeight) => {
+    const legendStartX = canvasWidth * 0.65; // 图例位置向右移动
+    const legendStartY = 40;
+    const lineHeight = 28;
+    const maxWidth = canvasWidth - legendStartX - 20;
     
-    ctx.font = '12px Arial';
+    ctx.font = 'bold 13px Arial';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     
+    // 绘制图例标题
+    ctx.fillStyle = '#333';
+    ctx.font = 'bold 16px Arial';
+    ctx.fillText('失误組合', legendStartX, legendStartY - 10);
+    
+    ctx.font = 'bold 13px Arial';
+    
     pieData.forEach((data, index) => {
-      const y = legendY + index * lineHeight;
+      const y = legendStartY + 20 + index * lineHeight;
       
-      // 绘制颜色方块
+      // 绘制颜色方块 - 使用更大的方块
       ctx.fillStyle = colors[index];
-      ctx.fillRect(legendX, y - 6, 12, 12);
+      ctx.fillRect(legendStartX, y - 8, 16, 16);
       
-      // 绘制边框
+      // 绘制方块边框
       ctx.strokeStyle = '#333';
       ctx.lineWidth = 1;
-      ctx.strokeRect(legendX, y - 6, 12, 12);
+      ctx.strokeRect(legendStartX, y - 8, 16, 16);
       
-      // 绘制文本
+      // 准备文本
+      const percentage = `${data.percentage.toFixed(1)}%`;
+      const count = `(${data.count}回)`;
+      let labelText = data.label;
+      
+      // 如果标签太长，进行换行处理
+      const textX = legendStartX + 25;
       ctx.fillStyle = '#333';
-      const text = `${data.label} (${data.count})`;
-      ctx.fillText(text, legendX + 20, y);
+      
+      // 测量文本宽度
+      const fullText = `${labelText} ${percentage} ${count}`;
+      const fullTextWidth = ctx.measureText(fullText).width;
+      
+      if (fullTextWidth <= maxWidth) {
+        // 一行可以放下
+        ctx.fillText(fullText, textX, y);
+      } else {
+        // 需要分行显示
+        ctx.fillText(labelText, textX, y - 6);
+        
+        ctx.font = '11px Arial';
+        ctx.fillStyle = '#666';
+        ctx.fillText(`${percentage} ${count}`, textX, y + 8);
+        ctx.font = 'bold 13px Arial';
+        ctx.fillStyle = '#333';
+      }
     });
+    
+    // 绘制总计信息
+    const totalFailures = pieData.reduce((sum, data) => sum + data.count, 0);
+    const totalY = legendStartY + 30 + pieData.length * lineHeight;
+    
+    ctx.fillStyle = '#666';
+    ctx.font = '12px Arial';
+    ctx.fillText(`総失误数: ${totalFailures}回`, legendStartX, totalY);
   };
 
   return (
@@ -245,8 +302,8 @@ const PieChart = ({ actions }) => {
       <h2>失误組合の分析</h2>
       <canvas 
         ref={canvasRef} 
-        width={600} 
-        height={400}
+        width={800} 
+        height={500}
         className="pie-canvas"
       />
     </div>
