@@ -150,8 +150,31 @@ const PieChart = ({ actions }) => {
     return colors.slice(0, count);
   };
 
-  // 检测鼠标是否在某个扇形内
-  const getSliceAtPoint = useCallback((x, y, centerX, centerY, radius, pieData) => {
+  // 颜色加亮函数
+  const lightenColor = useCallback((color, percent) => {
+    // 添加安全检查
+    if (!color || typeof color !== 'string') {
+      return '#000000'; // 返回默认颜色
+    }
+    
+    // 确保颜色格式正确
+    const cleanColor = color.startsWith('#') ? color : '#' + color;
+    const num = parseInt(cleanColor.replace("#", ""), 16);
+    
+    // 检查是否为有效的十六进制颜色
+    if (isNaN(num)) {
+      return '#000000'; // 返回默认颜色
+    }
+    
+    const amt = Math.round(2.55 * percent);
+    const R = (num >> 16) + amt;
+    const B = (num >> 8 & 0x00FF) + amt;
+    const G = (num & 0x0000FF) + amt;
+    return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 + (B < 255 ? B < 1 ? 0 : B : 255) * 0x100 + (G < 255 ? G < 1 ? 0 : G : 255)).toString(16).slice(1);
+  }, []);
+
+  // 检测鼠标是否在某个扇形内 - 移除对 pieData 的依赖
+  const getSliceAtPoint = useCallback((x, y, centerX, centerY, radius, currentPieData) => {
     const dx = x - centerX;
     const dy = y - centerY;
     const distance = Math.sqrt(dx * dx + dy * dy);
@@ -162,8 +185,8 @@ const PieChart = ({ actions }) => {
     if (angle < 0) angle += 2 * Math.PI;
     
     let currentAngle = 0;
-    for (let i = 0; i < pieData.length; i++) {
-      const sliceAngle = (pieData[i].percentage / 100) * 2 * Math.PI;
+    for (let i = 0; i < currentPieData.length; i++) {
+      const sliceAngle = (currentPieData[i].percentage / 100) * 2 * Math.PI;
       if (angle >= currentAngle && angle <= currentAngle + sliceAngle) {
         return i;
       }
@@ -173,7 +196,10 @@ const PieChart = ({ actions }) => {
     return null;
   }, []);
 
-  // 处理鼠标移动
+  // 处理鼠标移动 - 使用 useRef 来避免依赖 pieData
+  const pieDataRef = useRef(pieData);
+  pieDataRef.current = pieData;
+
   const handleMouseMove = useCallback((event) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -192,38 +218,37 @@ const PieChart = ({ actions }) => {
     const centerY = canvas.height / 2;
     const radius = Math.min(centerX * 0.8, centerY * 0.8);
     
-    const sliceIndex = getSliceAtPoint(canvasX, canvasY, centerX, centerY, radius, pieData);
+    const sliceIndex = getSliceAtPoint(canvasX, canvasY, centerX, centerY, radius, pieDataRef.current);
     
     setHoveredSlice(sliceIndex);
     setMousePos({ x: event.clientX, y: event.clientY });
-  }, [pieData, getSliceAtPoint]);
+  }, [getSliceAtPoint]);
 
   // 处理鼠标离开
   const handleMouseLeave = useCallback(() => {
     setHoveredSlice(null);
   }, []);
 
-  // 颜色加亮函数
-  const lightenColor = useCallback((color, percent) => {
-    const num = parseInt(color.replace("#", ""), 16);
-    const amt = Math.round(2.55 * percent);
-    const R = (num >> 16) + amt;
-    const B = (num >> 8 & 0x00FF) + amt;
-    const G = (num & 0x0000FF) + amt;
-    return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 + (B < 255 ? B < 1 ? 0 : B : 255) * 0x100 + (G < 255 ? G < 1 ? 0 : G : 255)).toString(16).slice(1);
-  }, []);
-
+  // 第一个 useEffect：只处理数据计算和设置，不处理事件监听器
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    
     // 获取失误组合数据
     const failureCombinations = calculateFailureCombinations(actions);
     const processedData = processDataForPieChart(failureCombinations);
     const generatedColors = generateColors(processedData.length);
     
+    // 确保颜色数组和数据数组长度匹配
+    const safeColors = generatedColors.length >= processedData.length 
+      ? generatedColors 
+      : [...generatedColors, ...Array(processedData.length - generatedColors.length).fill('#CCCCCC')];
+    
     setPieData(processedData);
-    setColors(generatedColors);
+    setColors(safeColors);
+  }, [actions]); // 只依赖 actions
+
+  // 第二个 useEffect：只处理事件监听器
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
     
     // 添加事件监听器
     canvas.addEventListener('mousemove', handleMouseMove);
@@ -233,11 +258,12 @@ const PieChart = ({ actions }) => {
       canvas.removeEventListener('mousemove', handleMouseMove);
       canvas.removeEventListener('mouseleave', handleMouseLeave);
     };
-  }, [actions, handleMouseMove, handleMouseLeave]);
+  }, [handleMouseMove, handleMouseLeave]); // 这些回调现在是稳定的
 
+  // 第三个 useEffect：处理绘制
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || pieData.length === 0) return;
+    if (!canvas) return;
     
     const ctx = canvas.getContext('2d');
     
@@ -261,6 +287,11 @@ const PieChart = ({ actions }) => {
       return;
     }
     
+    // 确保 colors 数组有足够的元素
+    if (colors.length === 0) {
+      return; // 等待颜色数据加载
+    }
+    
     // 绘制饼图
     let currentAngle = -Math.PI / 2; // 从顶部开始
     
@@ -268,13 +299,16 @@ const PieChart = ({ actions }) => {
       const sliceAngle = (data.percentage / 100) * 2 * Math.PI;
       const isHovered = hoveredSlice === index;
       
+      // 安全获取颜色，如果索引超出范围则使用默认颜色
+      const baseColor = colors[index] || '#CCCCCC';
+      
       // 如果是悬停状态，稍微向外扩展
       const currentRadius = isHovered ? radius * 1.1 : radius;
       const offsetX = isHovered ? Math.cos(currentAngle + sliceAngle / 2) * 8 : 0;
       const offsetY = isHovered ? Math.sin(currentAngle + sliceAngle / 2) * 8 : 0;
       
       // 绘制扇形
-      ctx.fillStyle = isHovered ? lightenColor(colors[index], 20) : colors[index];
+      ctx.fillStyle = isHovered ? lightenColor(baseColor, 20) : baseColor;
       ctx.beginPath();
       ctx.moveTo(centerX + offsetX, centerY + offsetY);
       ctx.arc(centerX + offsetX, centerY + offsetY, currentRadius, currentAngle, currentAngle + sliceAngle);
@@ -341,8 +375,11 @@ const PieChart = ({ actions }) => {
       const y = legendStartY + 20 + index * lineHeight;
       const isHovered = hoveredSlice === index;
       
+      // 安全获取颜色
+      const baseColor = colors[index] || '#CCCCCC';
+      
       // 绘制颜色方块 - 使用更大的方块，悬停时高亮
-      ctx.fillStyle = isHovered ? lightenColor(colors[index], 30) : colors[index];
+      ctx.fillStyle = isHovered ? lightenColor(baseColor, 30) : baseColor;
       const rectSize = isHovered ? 18 : 16;
       const rectOffset = isHovered ? -1 : 0;
       ctx.fillRect(legendStartX + rectOffset, y - 8 + rectOffset, rectSize, rectSize);
