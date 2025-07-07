@@ -1,8 +1,12 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import './PieChart.css';
 
 const PieChart = ({ actions }) => {
   const canvasRef = useRef(null);
+  const [hoveredSlice, setHoveredSlice] = useState(null);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [pieData, setPieData] = useState([]);
+  const [colors, setColors] = useState([]);
   
   // 动作类型映射（与 RadarChart 中相同）
   const actionLabels = {
@@ -146,9 +150,94 @@ const PieChart = ({ actions }) => {
     return colors.slice(0, count);
   };
 
+  // 检测鼠标是否在某个扇形内
+  const getSliceAtPoint = useCallback((x, y, centerX, centerY, radius, pieData) => {
+    const dx = x - centerX;
+    const dy = y - centerY;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    if (distance > radius) return null;
+    
+    let angle = Math.atan2(dy, dx) + Math.PI / 2;
+    if (angle < 0) angle += 2 * Math.PI;
+    
+    let currentAngle = 0;
+    for (let i = 0; i < pieData.length; i++) {
+      const sliceAngle = (pieData[i].percentage / 100) * 2 * Math.PI;
+      if (angle >= currentAngle && angle <= currentAngle + sliceAngle) {
+        return i;
+      }
+      currentAngle += sliceAngle;
+    }
+    
+    return null;
+  }, []);
+
+  // 处理鼠标移动
+  const handleMouseMove = useCallback((event) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    
+    // 调整坐标以匹配canvas的实际尺寸
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const canvasX = x * scaleX;
+    const canvasY = y * scaleY;
+    
+    const centerX = canvas.width * 0.35;
+    const centerY = canvas.height / 2;
+    const radius = Math.min(centerX * 0.8, centerY * 0.8);
+    
+    const sliceIndex = getSliceAtPoint(canvasX, canvasY, centerX, centerY, radius, pieData);
+    
+    setHoveredSlice(sliceIndex);
+    setMousePos({ x: event.clientX, y: event.clientY });
+  }, [pieData, getSliceAtPoint]);
+
+  // 处理鼠标离开
+  const handleMouseLeave = useCallback(() => {
+    setHoveredSlice(null);
+  }, []);
+
+  // 颜色加亮函数
+  const lightenColor = useCallback((color, percent) => {
+    const num = parseInt(color.replace("#", ""), 16);
+    const amt = Math.round(2.55 * percent);
+    const R = (num >> 16) + amt;
+    const B = (num >> 8 & 0x00FF) + amt;
+    const G = (num & 0x0000FF) + amt;
+    return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 + (B < 255 ? B < 1 ? 0 : B : 255) * 0x100 + (G < 255 ? G < 1 ? 0 : G : 255)).toString(16).slice(1);
+  }, []);
+
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    
+    // 获取失误组合数据
+    const failureCombinations = calculateFailureCombinations(actions);
+    const processedData = processDataForPieChart(failureCombinations);
+    const generatedColors = generateColors(processedData.length);
+    
+    setPieData(processedData);
+    setColors(generatedColors);
+    
+    // 添加事件监听器
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mouseleave', handleMouseLeave);
+    
+    return () => {
+      canvas.removeEventListener('mousemove', handleMouseMove);
+      canvas.removeEventListener('mouseleave', handleMouseLeave);
+    };
+  }, [actions, handleMouseMove, handleMouseLeave]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || pieData.length === 0) return;
     
     const ctx = canvas.getContext('2d');
     
@@ -162,10 +251,6 @@ const PieChart = ({ actions }) => {
     // 清空画布
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
     
-    // 获取失误组合数据
-    const failureCombinations = calculateFailureCombinations(actions);
-    const pieData = processDataForPieChart(failureCombinations);
-    
     if (pieData.length === 0) {
       // 没有失误数据时显示提示
       ctx.fillStyle = '#666';
@@ -176,33 +261,37 @@ const PieChart = ({ actions }) => {
       return;
     }
     
-    const colors = generateColors(pieData.length);
-    
     // 绘制饼图
     let currentAngle = -Math.PI / 2; // 从顶部开始
     
     pieData.forEach((data, index) => {
       const sliceAngle = (data.percentage / 100) * 2 * Math.PI;
+      const isHovered = hoveredSlice === index;
+      
+      // 如果是悬停状态，稍微向外扩展
+      const currentRadius = isHovered ? radius * 1.1 : radius;
+      const offsetX = isHovered ? Math.cos(currentAngle + sliceAngle / 2) * 8 : 0;
+      const offsetY = isHovered ? Math.sin(currentAngle + sliceAngle / 2) * 8 : 0;
       
       // 绘制扇形
-      ctx.fillStyle = colors[index];
+      ctx.fillStyle = isHovered ? lightenColor(colors[index], 20) : colors[index];
       ctx.beginPath();
-      ctx.moveTo(centerX, centerY);
-      ctx.arc(centerX, centerY, radius, currentAngle, currentAngle + sliceAngle);
+      ctx.moveTo(centerX + offsetX, centerY + offsetY);
+      ctx.arc(centerX + offsetX, centerY + offsetY, currentRadius, currentAngle, currentAngle + sliceAngle);
       ctx.closePath();
       ctx.fill();
       
       // 绘制边框
-      ctx.strokeStyle = '#fff';
-      ctx.lineWidth = 3;
+      ctx.strokeStyle = isHovered ? '#333' : '#fff';
+      ctx.lineWidth = isHovered ? 4 : 3;
       ctx.stroke();
       
       // 只有当百分比大于10%时才显示百分比标签
       if (data.percentage >= 10) {
         const labelAngle = currentAngle + sliceAngle / 2;
-        const labelRadius = radius * 0.65;
-        const labelX = centerX + labelRadius * Math.cos(labelAngle);
-        const labelY = centerY + labelRadius * Math.sin(labelAngle);
+        const labelRadius = currentRadius * 0.65;
+        const labelX = centerX + offsetX + labelRadius * Math.cos(labelAngle);
+        const labelY = centerY + offsetY + labelRadius * Math.sin(labelAngle);
         
         // 添加文字背景
         ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
@@ -227,11 +316,11 @@ const PieChart = ({ actions }) => {
     });
     
     // 绘制改进的图例
-    drawImprovedLegend(ctx, pieData, colors, canvasWidth, canvasHeight);
+    drawImprovedLegend(ctx, pieData, colors, canvasWidth, canvasHeight, hoveredSlice);
     
-  }, [actions]);
+  }, [pieData, colors, hoveredSlice, lightenColor]);
 
-  const drawImprovedLegend = (ctx, pieData, colors, canvasWidth, canvasHeight) => {
+  const drawImprovedLegend = (ctx, pieData, colors, canvasWidth, canvasHeight, hoveredSlice = null) => {
     const legendStartX = canvasWidth * 0.65; // 图例位置向右移动
     const legendStartY = 40;
     const lineHeight = 28;
@@ -250,15 +339,18 @@ const PieChart = ({ actions }) => {
     
     pieData.forEach((data, index) => {
       const y = legendStartY + 20 + index * lineHeight;
+      const isHovered = hoveredSlice === index;
       
-      // 绘制颜色方块 - 使用更大的方块
-      ctx.fillStyle = colors[index];
-      ctx.fillRect(legendStartX, y - 8, 16, 16);
+      // 绘制颜色方块 - 使用更大的方块，悬停时高亮
+      ctx.fillStyle = isHovered ? lightenColor(colors[index], 30) : colors[index];
+      const rectSize = isHovered ? 18 : 16;
+      const rectOffset = isHovered ? -1 : 0;
+      ctx.fillRect(legendStartX + rectOffset, y - 8 + rectOffset, rectSize, rectSize);
       
       // 绘制方块边框
-      ctx.strokeStyle = '#333';
-      ctx.lineWidth = 1;
-      ctx.strokeRect(legendStartX, y - 8, 16, 16);
+      ctx.strokeStyle = isHovered ? '#000' : '#333';
+      ctx.lineWidth = isHovered ? 2 : 1;
+      ctx.strokeRect(legendStartX + rectOffset, y - 8 + rectOffset, rectSize, rectSize);
       
       // 准备文本
       const percentage = `${data.percentage.toFixed(1)}%`;
@@ -267,7 +359,8 @@ const PieChart = ({ actions }) => {
       
       // 如果标签太长，进行换行处理
       const textX = legendStartX + 25;
-      ctx.fillStyle = '#333';
+      ctx.fillStyle = isHovered ? '#000' : '#333';
+      ctx.font = isHovered ? 'bold 14px Arial' : 'bold 13px Arial';
       
       // 测量文本宽度
       const fullText = `${labelText} ${percentage} ${count}`;
@@ -280,11 +373,11 @@ const PieChart = ({ actions }) => {
         // 需要分行显示
         ctx.fillText(labelText, textX, y - 6);
         
-        ctx.font = '11px Arial';
-        ctx.fillStyle = '#666';
+        ctx.font = isHovered ? '12px Arial' : '11px Arial';
+        ctx.fillStyle = isHovered ? '#333' : '#666';
         ctx.fillText(`${percentage} ${count}`, textX, y + 8);
-        ctx.font = 'bold 13px Arial';
-        ctx.fillStyle = '#333';
+        ctx.font = isHovered ? 'bold 14px Arial' : 'bold 13px Arial';
+        ctx.fillStyle = isHovered ? '#000' : '#333';
       }
     });
     
@@ -300,12 +393,40 @@ const PieChart = ({ actions }) => {
   return (
     <div className="pie-chart">
       <h2>失误組合の分析</h2>
-      <canvas 
-        ref={canvasRef} 
-        width={800} 
-        height={500}
-        className="pie-canvas"
-      />
+      <div style={{ position: 'relative' }}>
+        <canvas 
+          ref={canvasRef} 
+          width={800} 
+          height={500}
+          className="pie-canvas"
+          style={{ cursor: hoveredSlice !== null ? 'pointer' : 'default' }}
+        />
+        {hoveredSlice !== null && pieData[hoveredSlice] && (
+          <div 
+            className="tooltip"
+            style={{
+              position: 'fixed',
+              left: mousePos.x + 10,
+              top: mousePos.y - 10,
+              backgroundColor: 'rgba(0, 0, 0, 0.9)',
+              color: 'white',
+              padding: '8px 12px',
+              borderRadius: '6px',
+              fontSize: '14px',
+              fontWeight: 'bold',
+              pointerEvents: 'none',
+              zIndex: 1000,
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            <div>{pieData[hoveredSlice].label}</div>
+            <div style={{ fontSize: '12px', color: '#ccc', marginTop: '2px' }}>
+              {pieData[hoveredSlice].percentage.toFixed(1)}% ({pieData[hoveredSlice].count}回)
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
