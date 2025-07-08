@@ -46,6 +46,15 @@ const RadarChart = ({ actions }) => {
       
       if (!labelId) return;
       
+      // 检查是否是最后一个动作
+      const isLastAction = index === sortedActions.length - 1;
+      
+      // 如果是最后一个动作，完全不计入统计
+      if (isLastAction) {
+        return;
+      }
+      
+      // 只有非最后一个动作才计入总数和成功数统计
       actionStats[labelId].total++;
       
       // 检查是否成功
