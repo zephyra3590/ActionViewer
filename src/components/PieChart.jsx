@@ -82,38 +82,31 @@ const PieChart = ({ actions }) => {
       const isSuccess = checkActionSuccess(action, sortedActions, index);
       
       if (!isSuccess) {
-        // 当前动作是失误，查找之前最近的成功动作
-        let previousSuccessAction = null;
-        
-        // 从当前动作往前查找最近的成功动作
-        for (let i = index - 1; i >= 0; i--) {
-          const prevAction = sortedActions[i];
+        // 当前动作是失误，检查前一个动作是否是成功的
+        if (index > 0) {
+          const prevAction = sortedActions[index - 1];
           
-          // 检查前一个动作是否也是最后一个动作（虽然在这个循环中不太可能）
-          const isPrevLastAction = i === sortedActions.length - 1;
+          // 检查前一个动作是否是最后一个动作
+          const isPrevLastAction = (index - 1) === sortedActions.length - 1;
           
           let prevActionSuccess;
           if (isPrevLastAction) {
             // 如果前一个动作是最后一个，假设成功
             prevActionSuccess = true;
           } else {
-            prevActionSuccess = checkActionSuccess(prevAction, sortedActions, i);
+            prevActionSuccess = checkActionSuccess(prevAction, sortedActions, index - 1);
           }
           
+          // 只有当前一个动作是成功的时候，才记录失误组合
           if (prevActionSuccess) {
-            previousSuccessAction = prevAction;
-            break;
+            const prevActionName = prevAction.label_names && prevAction.label_names[0];
+            const combinationKey = `${prevActionName} → ${currentActionName}`;
+            
+            failureCombinations[combinationKey] = (failureCombinations[combinationKey] || 0) + 1;
           }
+          // 如果前一个动作也是失误，则不记录任何组合
         }
-        
-        // 如果找到了之前的成功动作，创建组合
-        if (previousSuccessAction) {
-          const prevActionName = previousSuccessAction.label_names && previousSuccessAction.label_names[0];
-          const combinationKey = `${prevActionName} → ${currentActionName}`;
-          
-          failureCombinations[combinationKey] = (failureCombinations[combinationKey] || 0) + 1;
-        }
-        // 如果没有找到之前的成功动作，则不统计（按照要求）
+        // 如果是第一个动作且失误，也不记录组合
       }
     });
     
