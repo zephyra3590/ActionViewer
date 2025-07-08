@@ -75,9 +75,17 @@ const ActionList = ({ actions, onActionClick, fps }) => {
             sortedAction.label_names[0] === action.label_names[0]
           );
           
-          // 判断动作是否成功
-          const isSuccess = checkActionSuccess(action, sortedActions, sortedIndex);
-          const statusIcon = isSuccess ? "🟢" : "❌";
+          // 检查是否是最后一个动作
+          const isLastAction = sortedIndex === sortedActions.length - 1;
+          
+          // 判断动作是否成功（最后一个动作不做判断）
+          let statusIcon;
+          if (isLastAction) {
+            statusIcon = "⭕"; // 或者使用其他图标表示"不做判断"
+          } else {
+            const isSuccess = checkActionSuccess(action, sortedActions, sortedIndex);
+            statusIcon = isSuccess ? "🟢" : "❌";
+          }
           
           return (
             <li 
