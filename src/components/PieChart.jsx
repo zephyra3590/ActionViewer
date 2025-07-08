@@ -70,6 +70,14 @@ const PieChart = ({ actions }) => {
       const currentActionName = action.label_names && action.label_names[0];
       if (!currentActionName) return;
       
+      // 检查是否是最后一个动作
+      const isLastAction = index === sortedActions.length - 1;
+      
+      // 如果是最后一个动作，跳过失误统计（作为例外不做判断）
+      if (isLastAction) {
+        return;
+      }
+      
       // 检查当前动作是否失误
       const isSuccess = checkActionSuccess(action, sortedActions, index);
       
@@ -80,7 +88,17 @@ const PieChart = ({ actions }) => {
         // 从当前动作往前查找最近的成功动作
         for (let i = index - 1; i >= 0; i--) {
           const prevAction = sortedActions[i];
-          const prevActionSuccess = checkActionSuccess(prevAction, sortedActions, i);
+          
+          // 检查前一个动作是否也是最后一个动作（虽然在这个循环中不太可能）
+          const isPrevLastAction = i === sortedActions.length - 1;
+          
+          let prevActionSuccess;
+          if (isPrevLastAction) {
+            // 如果前一个动作是最后一个，假设成功
+            prevActionSuccess = true;
+          } else {
+            prevActionSuccess = checkActionSuccess(prevAction, sortedActions, i);
+          }
           
           if (prevActionSuccess) {
             previousSuccessAction = prevAction;
@@ -426,7 +444,7 @@ const PieChart = ({ actions }) => {
     ctx.font = '12px Arial';
     ctx.fillText(`総失误数: ${totalFailures}回`, legendStartX, totalY);
   };
-
+  
   return (
     <div className="pie-chart">
       <h2>失误組合の分析</h2>
