@@ -370,6 +370,7 @@ const PieChart = ({ actions }) => {
     const legendStartY = 40;
     const lineHeight = 28;
     const maxWidth = canvasWidth - legendStartX - 20;
+    const maxLegendHeight = canvasHeight - 80; // 为图例设置最大高度，留出底部空间
     
     ctx.font = 'bold 13px Arial';
     ctx.textAlign = 'left';
@@ -382,7 +383,13 @@ const PieChart = ({ actions }) => {
     
     ctx.font = 'bold 13px Arial';
     
-    pieData.forEach((data, index) => {
+    // 计算最多可以显示的项目数
+    const availableHeight = maxLegendHeight - 50; // 减去标题和总计信息的空间
+    const maxVisibleItems = Math.floor(availableHeight / lineHeight);
+    const visibleData = pieData.slice(0, maxVisibleItems);
+    const hiddenItemsCount = pieData.length - maxVisibleItems;
+    
+    visibleData.forEach((data, index) => {
       const y = legendStartY + 20 + index * lineHeight;
       const isHovered = hoveredSlice === index;
       
@@ -405,12 +412,12 @@ const PieChart = ({ actions }) => {
       const count = `(${data.count}回)`;
       let labelText = data.label;
       
-      // 如果标签太长，进行换行处理
+      // 如果标签太长，进行截断处理
       const textX = legendStartX + 25;
       ctx.fillStyle = isHovered ? '#000' : '#333';
       ctx.font = isHovered ? 'bold 14px Arial' : 'bold 13px Arial';
       
-      // 测量文本宽度
+      // 测量文本宽度并进行截断
       const fullText = `${labelText} ${percentage} ${count}`;
       const fullTextWidth = ctx.measureText(fullText).width;
       
@@ -418,8 +425,20 @@ const PieChart = ({ actions }) => {
         // 一行可以放下
         ctx.fillText(fullText, textX, y);
       } else {
-        // 需要分行显示
-        ctx.fillText(labelText, textX, y - 6);
+        // 需要截断标签文本
+        const maxLabelWidth = maxWidth - ctx.measureText(`${percentage} ${count}`).width - 10;
+        let truncatedLabel = labelText;
+        
+        while (ctx.measureText(truncatedLabel + '...').width > maxLabelWidth && truncatedLabel.length > 3) {
+          truncatedLabel = truncatedLabel.slice(0, -1);
+        }
+        
+        if (truncatedLabel.length < labelText.length) {
+          truncatedLabel += '...';
+        }
+        
+        // 分行显示
+        ctx.fillText(truncatedLabel, textX, y - 6);
         
         ctx.font = isHovered ? '12px Arial' : '11px Arial';
         ctx.fillStyle = isHovered ? '#333' : '#666';
@@ -429,9 +448,20 @@ const PieChart = ({ actions }) => {
       }
     });
     
+    // 如果有隐藏的项目，显示提示
+    if (hiddenItemsCount > 0) {
+      const moreY = legendStartY + 20 + visibleData.length * lineHeight;
+      ctx.fillStyle = '#999';
+      ctx.font = '12px Arial';
+      ctx.fillText(`... 还有 ${hiddenItemsCount} 个项目`, legendStartX + 25, moreY);
+    }
+    
     // 绘制总计信息
     const totalFailures = pieData.reduce((sum, data) => sum + data.count, 0);
-    const totalY = legendStartY + 30 + pieData.length * lineHeight;
+    const totalY = Math.min(
+      legendStartY + 30 + visibleData.length * lineHeight + (hiddenItemsCount > 0 ? 20 : 0),
+      canvasHeight - 30
+    );
     
     ctx.fillStyle = '#666';
     ctx.font = '12px Arial';
@@ -445,7 +475,7 @@ const PieChart = ({ actions }) => {
         <canvas 
           ref={canvasRef} 
           width={800} 
-          height={500}
+          height={600} // 增加画布高度来容纳更多图例项目
           className="pie-canvas"
           style={{ cursor: hoveredSlice !== null ? 'pointer' : 'default' }}
         />
