@@ -113,7 +113,7 @@ const RadarChart = ({ actions }) => {
     const ctx = canvas.getContext('2d');
     const centerX = canvas.width / 2;
     const centerY = canvas.height / 2;
-    const radius = Math.min(centerX, centerY) - 80;
+    const radius = Math.min(centerX, centerY) - 120; // 增加边距为标签留出更多空间
     
     // 清空画布
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -126,8 +126,8 @@ const RadarChart = ({ actions }) => {
     // 绘制背景网格
     drawGrid(ctx, centerX, centerY, radius, actionKeys.length);
     
-    // 绘制标签（传入成功率数据以获取总次数）
-    drawLabels(ctx, centerX, centerY, radius, actionKeys, angleStep, successRates);
+    // 绘制改进的标签
+    drawImprovedLabels(ctx, centerX, centerY, radius, actionKeys, angleStep, successRates);
     
     // 绘制数据
     drawData(ctx, centerX, centerY, radius, successRates, actionKeys, angleStep);
@@ -168,25 +168,121 @@ const RadarChart = ({ actions }) => {
     }
   };
   
-  const drawLabels = (ctx, centerX, centerY, radius, actionKeys, angleStep, successRates) => {
-    ctx.fillStyle = '#333';
-    ctx.font = 'bold 14px Arial';
-    
+  const drawImprovedLabels = (ctx, centerX, centerY, radius, actionKeys, angleStep, successRates) => {
     actionKeys.forEach((key, index) => {
       const angle = index * angleStep - Math.PI / 2;
-      const labelRadius = radius + 30;
+      
+      // 动态调整标签距离，避免重叠
+      let labelRadius = radius + 60;
+      
+      // 对于顶部和底部的标签，增加更多距离
+      if (Math.abs(Math.sin(angle)) > 0.7) {
+        labelRadius = radius + 80;
+      }
+      
+      // 对于左右两侧的标签，稍微增加距离
+      if (Math.abs(Math.cos(angle)) > 0.7) {
+        labelRadius = radius + 70;
+      }
+      
       const x = centerX + labelRadius * Math.cos(angle);
       const y = centerY + labelRadius * Math.sin(angle);
       
       // 获取该动作的总次数
       const totalCount = successRates[key] ? successRates[key].total : 0;
       
-      // 组合标签文本：动作名称 + (总次数)
-      const labelText = `${actionLabels[key]} (${totalCount})`;
+      // 动作名称和次数
+      const actionName = actionLabels[key];
+      const countText = `(${totalCount})`;
       
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(labelText, x, y);
+      // 智能对齐方式，根据标签位置调整
+      let textAlign = 'center';
+      let textBaseline = 'middle';
+      let xOffset = 0;
+      let yOffset = 0;
+      
+      // 根据角度调整对齐方式和偏移
+      const cosAngle = Math.cos(angle);
+      const sinAngle = Math.sin(angle);
+      
+      if (cosAngle > 0.5) {
+        // 右侧标签
+        textAlign = 'left';
+        xOffset = 5;
+      } else if (cosAngle < -0.5) {
+        // 左侧标签
+        textAlign = 'right';
+        xOffset = -5;
+      }
+      
+      if (sinAngle > 0.5) {
+        // 下方标签
+        textBaseline = 'top';
+        yOffset = 5;
+      } else if (sinAngle < -0.5) {
+        // 上方标签
+        textBaseline = 'bottom';
+        yOffset = -5;
+      }
+      
+      // 设置文本对齐
+      ctx.textAlign = textAlign;
+      ctx.textBaseline = textBaseline;
+      
+      // 先测量完整文本的宽度来绘制背景
+      ctx.font = 'bold 13px Arial';
+      const actionNameMetrics = ctx.measureText(actionName);
+      ctx.font = '11px Arial';
+      const countMetrics = ctx.measureText(countText);
+      
+      // 计算总宽度（动作名称 + 空格 + 括号）
+      const totalWidth = actionNameMetrics.width + 3 + countMetrics.width;
+      const textHeight = 16;
+      
+      // 计算背景矩形的位置
+      let bgX = x + xOffset;
+      let bgY = y + yOffset;
+      
+      if (textAlign === 'center') {
+        bgX = bgX - totalWidth / 2;
+      } else if (textAlign === 'right') {
+        bgX = bgX - totalWidth;
+      }
+      
+      if (textBaseline === 'middle') {
+        bgY = bgY - textHeight / 2;
+      } else if (textBaseline === 'bottom') {
+        bgY = bgY - textHeight;
+      }
+      
+      // 绘制白色半透明背景
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.fillRect(bgX - 4, bgY - 2, totalWidth + 8, textHeight + 4);
+      
+      // 绘制边框
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(bgX - 4, bgY - 2, totalWidth + 8, textHeight + 4);
+      
+      // 计算动作名称的起始位置
+      let actionNameX = x + xOffset;
+      if (textAlign === 'center') {
+        actionNameX = x + xOffset - totalWidth / 2;
+      } else if (textAlign === 'right') {
+        actionNameX = x + xOffset - totalWidth;
+      }
+      
+      // 绘制动作名称
+      ctx.fillStyle = '#333';
+      ctx.font = 'bold 13px Arial';
+      ctx.textAlign = 'left'; // 强制左对齐来精确控制位置
+      ctx.fillText(actionName, actionNameX, y + yOffset);
+      
+      // 绘制次数（紧跟在动作名称后面）
+      ctx.fillStyle = '#666';
+      ctx.font = '11px Arial';
+      const countX = actionNameX + actionNameMetrics.width + 3;
+      ctx.fillText(countText, countX, y + yOffset);
     });
   };
   
@@ -214,7 +310,7 @@ const RadarChart = ({ actions }) => {
     ctx.fill();
     ctx.stroke();
     
-    // 绘制数据点
+    // 绘制数据点和数值
     ctx.fillStyle = '#4CAF50';
     actionKeys.forEach((key, index) => {
       const angle = index * angleStep - Math.PI / 2;
@@ -223,16 +319,48 @@ const RadarChart = ({ actions }) => {
       const x = centerX + dataRadius * Math.cos(angle);
       const y = centerY + dataRadius * Math.sin(angle);
       
+      // 绘制数据点
       ctx.beginPath();
       ctx.arc(x, y, 4, 0, 2 * Math.PI);
       ctx.fill();
       
-      // 显示数值
+      // 显示数值（只有当数值大于0时才显示）
       if (rate > 0) {
-        ctx.fillStyle = '#333';
+        // 为数值添加背景以提高可读性
+        const valueText = rate.toFixed(1) + '%';
         ctx.font = '11px Arial';
         ctx.textAlign = 'center';
-        ctx.fillText(rate.toFixed(1) + '%', x, y - 10);
+        ctx.textBaseline = 'middle';
+        
+        const valueMetrics = ctx.measureText(valueText);
+        const valueWidth = valueMetrics.width;
+        const valueHeight = 12;
+        
+        // 计算数值标签的位置，避免与轴线重叠
+        let valueX = x;
+        let valueY = y - 15;
+        
+        // 如果数据点靠近中心，将标签向外移动
+        if (dataRadius < radius * 0.3) {
+          const labelOffset = 20;
+          valueX = x + labelOffset * Math.cos(angle);
+          valueY = y + labelOffset * Math.sin(angle);
+        }
+        
+        // 绘制数值背景
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.fillRect(valueX - valueWidth/2 - 3, valueY - valueHeight/2 - 1, valueWidth + 6, valueHeight + 2);
+        
+        // 绘制数值边框
+        ctx.strokeStyle = 'rgba(76, 175, 80, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(valueX - valueWidth/2 - 3, valueY - valueHeight/2 - 1, valueWidth + 6, valueHeight + 2);
+        
+        // 绘制数值文本
+        ctx.fillStyle = '#2E7D32';
+        ctx.fillText(valueText, valueX, valueY);
+        
+        // 恢复样式
         ctx.fillStyle = '#4CAF50';
       }
     });
@@ -243,8 +371,8 @@ const RadarChart = ({ actions }) => {
       <h2>動作成功率の分析</h2>
       <canvas 
         ref={canvasRef} 
-        width={600} 
-        height={500}
+        width={700} 
+        height={600}
         className="radar-canvas"
       />
     </div>
