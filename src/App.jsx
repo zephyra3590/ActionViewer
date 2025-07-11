@@ -341,12 +341,15 @@ function App() {
           </div>
         )}
         
-        {/* 雷达图显示区域 */}
+        {/* 雷达图显示区域 - 添加了 onActionClick 属性 */}
         {actions.length > 0 && (
-          <RadarChart actions={actions} />
+          <RadarChart 
+            actions={actions} 
+            onActionClick={handleActionClick} 
+          />
         )}
         
-        {/* 新增饼图显示区域 */}
+        {/* 饼图显示区域 */}
         {actions.length > 0 && (
           <PieChart actions={actions} />
         )}
