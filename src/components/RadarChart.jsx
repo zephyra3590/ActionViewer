@@ -1,8 +1,12 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import './RadarChart.css';
 
-const RadarChart = ({ actions }) => {
+const RadarChart = ({ actions, onActionClick }) => {
   const canvasRef = useRef(null);
+  const [hoveredPoint, setHoveredPoint] = useState(null);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+  const [tooltipData, setTooltipData] = useState(null);
+  const [selectedActionType, setSelectedActionType] = useState(null);
   
   // 动作类型映射
   const actionLabels = {
@@ -19,6 +23,11 @@ const RadarChart = ({ actions }) => {
     "10": "ディフェンス"
   };
 
+  // 状态变化监控（用于调试）
+  useEffect(() => {
+    console.log('State changed - selectedActionType:', selectedActionType, 'tooltipData:', !!tooltipData);
+  }, [selectedActionType, tooltipData]);
+
   // 计算动作成功率
   const calculateSuccessRates = (actions) => {
     if (!actions || actions.length === 0) return {};
@@ -30,7 +39,12 @@ const RadarChart = ({ actions }) => {
     
     // 初始化统计
     Object.keys(actionLabels).forEach(key => {
-      actionStats[key] = { total: 0, success: 0, rate: 0 };
+      actionStats[key] = { 
+        total: 0, 
+        success: 0, 
+        rate: 0,
+        actions: [] // 存储该类型的所有动作
+      };
     });
     
     // 分析每个动作
@@ -48,6 +62,13 @@ const RadarChart = ({ actions }) => {
       
       // 检查是否是最后一个动作
       const isLastAction = index === sortedActions.length - 1;
+      
+      // 将动作添加到对应类型的列表中（包括最后一个动作，用于显示）
+      actionStats[labelId].actions.push({
+        ...action,
+        isSuccess: isLastAction ? null : checkActionSuccess(action, sortedActions, index),
+        isLastAction: isLastAction
+      });
       
       // 如果是最后一个动作，完全不计入统计
       if (isLastAction) {
@@ -106,6 +127,209 @@ const RadarChart = ({ actions }) => {
     return false;
   };
 
+  // 检测鼠标是否在数据点附近
+  const getHoveredPoint = useCallback((mouseX, mouseY, centerX, centerY, radius, successRates) => {
+    const actionKeys = Object.keys(actionLabels);
+    const angleStep = (2 * Math.PI) / actionKeys.length;
+    const hoverRadius = 15; // 悬停检测半径
+    
+    for (let i = 0; i < actionKeys.length; i++) {
+      const key = actionKeys[i];
+      const angle = i * angleStep - Math.PI / 2;
+      const rate = successRates[key] ? successRates[key].rate : 0;
+      const dataRadius = (radius * rate) / 100;
+      const x = centerX + dataRadius * Math.cos(angle);
+      const y = centerY + dataRadius * Math.sin(angle);
+      
+      const distance = Math.sqrt((mouseX - x) ** 2 + (mouseY - y) ** 2);
+      
+      if (distance <= hoverRadius) {
+        return {
+          index: i,
+          key: key,
+          actionName: actionLabels[key],
+          rate: rate,
+          total: successRates[key] ? successRates[key].total : 0,
+          success: successRates[key] ? successRates[key].success : 0,
+          actions: successRates[key] ? successRates[key].actions : []
+        };
+      }
+    }
+    
+    return null;
+  }, []);
+
+  // 处理鼠标移动
+  const handleMouseMove = useCallback((event) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    console.log('Mouse move, selectedActionType:', selectedActionType);
+    
+    // 如果有选中的动作类型，不处理悬停
+    if (selectedActionType) {
+      console.log('Selected action type exists, skipping hover logic');
+      return;
+    }
+    
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    
+    // 调整坐标以匹配canvas的实际尺寸
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const canvasX = x * scaleX;
+    const canvasY = y * scaleY;
+    
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const radius = Math.min(centerX, centerY) - 120;
+    
+    const successRates = calculateSuccessRates(actions);
+    const hoveredPoint = getHoveredPoint(canvasX, canvasY, centerX, centerY, radius, successRates);
+    
+    setHoveredPoint(hoveredPoint);
+    setTooltipData(hoveredPoint);
+    
+    // 智能调整tooltip位置，避免超出屏幕边界
+    if (hoveredPoint) {
+      const tooltipWidth = 350;
+      const tooltipHeight = 400;
+      let tooltipX = event.clientX + 15;
+      let tooltipY = event.clientY - 10;
+      
+      // 防止tooltip超出右边界
+      if (tooltipX + tooltipWidth > window.innerWidth) {
+        tooltipX = event.clientX - tooltipWidth - 15;
+      }
+      
+      // 防止tooltip超出底部边界
+      if (tooltipY + tooltipHeight > window.innerHeight) {
+        tooltipY = event.clientY - tooltipHeight + 10;
+      }
+      
+      // 防止tooltip超出顶部边界
+      if (tooltipY < 0) {
+        tooltipY = 10;
+      }
+      
+      setMousePos({ x: tooltipX, y: tooltipY });
+    }
+  }, [actions, getHoveredPoint, selectedActionType]);
+
+  // 处理鼠标离开
+  const handleMouseLeave = useCallback(() => {
+    console.log('Mouse left canvas, selectedActionType:', selectedActionType);
+    if (!selectedActionType) {
+      setHoveredPoint(null);
+      setTooltipData(null);
+    }
+    // 如果有选中状态，保持tooltip显示
+  }, [selectedActionType]);
+
+  // 时间格式化函数
+  const frameToTime = (frame) => {
+    const totalSeconds = frame;
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  // 处理动作点击
+  const handleActionItemClick = (startFrame) => {
+    if (onActionClick) {
+      onActionClick(startFrame);
+    }
+    // 注意：点击动作项时不隐藏tooltip，保持固定状态
+  };
+
+  // 处理数据点点击（固定显示该动作类型）
+  const handleDataPointClick = (pointData) => {
+    console.log('Data point clicked:', pointData.actionName, 'Current selected:', selectedActionType);
+    
+    if (selectedActionType === pointData.key) {
+      // 如果点击的是已选中的点，则取消选择
+      console.log('Deselecting current action type');
+      setSelectedActionType(null);
+      setTooltipData(null);
+      setHoveredPoint(null);
+    } else {
+      // 选择新的动作类型
+      console.log('Selecting new action type:', pointData.key);
+      setSelectedActionType(pointData.key);
+      setTooltipData(pointData);
+      setHoveredPoint(pointData); // 保持悬停状态以便绘制高亮
+      
+      // 设置固定tooltip的位置（屏幕中央偏右上）
+      const fixedX = window.innerWidth * 0.6;
+      const fixedY = window.innerHeight * 0.3;
+      setMousePos({ x: fixedX, y: fixedY });
+      console.log('Tooltip fixed at:', fixedX, fixedY);
+    }
+  };
+
+  // 处理点击事件
+  const handleCanvasClick = useCallback((event) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const canvasX = x * scaleX;
+    const canvasY = y * scaleY;
+    
+    const centerX = canvas.width / 2;
+    const centerY = canvas.height / 2;
+    const radius = Math.min(centerX, centerY) - 120;
+    
+    const successRates = calculateSuccessRates(actions);
+    const clickedPoint = getHoveredPoint(canvasX, canvasY, centerX, centerY, radius, successRates);
+    
+    if (clickedPoint) {
+      event.preventDefault();
+      event.stopPropagation();
+      handleDataPointClick(clickedPoint);
+    } else {
+      // 点击空白区域，取消选择
+      setSelectedActionType(null);
+      setTooltipData(null);
+      setHoveredPoint(null);
+    }
+  }, [actions, getHoveredPoint]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    // 添加事件监听器
+    canvas.addEventListener('mousemove', handleMouseMove);
+    canvas.addEventListener('mouseleave', handleMouseLeave);
+    canvas.addEventListener('click', handleCanvasClick);
+
+    // 添加键盘事件监听器
+    const handleKeyPress = (event) => {
+      if (event.key === 'Escape') {
+        setSelectedActionType(null);
+        setTooltipData(null);
+        setHoveredPoint(null);
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyPress);
+
+    return () => {
+      canvas.removeEventListener('mousemove', handleMouseMove);
+      canvas.removeEventListener('mouseleave', handleMouseLeave);
+      canvas.removeEventListener('click', handleCanvasClick);
+      document.removeEventListener('keydown', handleKeyPress);
+    };
+  }, [handleMouseMove, handleMouseLeave, handleCanvasClick]);
+  
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -130,9 +354,9 @@ const RadarChart = ({ actions }) => {
     drawImprovedLabels(ctx, centerX, centerY, radius, actionKeys, angleStep, successRates);
     
     // 绘制数据
-    drawData(ctx, centerX, centerY, radius, successRates, actionKeys, angleStep);
+    drawData(ctx, centerX, centerY, radius, successRates, actionKeys, angleStep, hoveredPoint, selectedActionType);
     
-  }, [actions]);
+  }, [actions, hoveredPoint, selectedActionType]);
   
   const drawGrid = (ctx, centerX, centerY, radius, numAxes) => {
     ctx.strokeStyle = '#ddd';
@@ -286,7 +510,7 @@ const RadarChart = ({ actions }) => {
     });
   };
   
-  const drawData = (ctx, centerX, centerY, radius, successRates, actionKeys, angleStep) => {
+  const drawData = (ctx, centerX, centerY, radius, successRates, actionKeys, angleStep, hoveredPoint, selectedActionType) => {
     // 绘制数据多边形
     ctx.strokeStyle = '#4CAF50';
     ctx.fillStyle = 'rgba(76, 175, 80, 0.2)';
@@ -311,7 +535,6 @@ const RadarChart = ({ actions }) => {
     ctx.stroke();
     
     // 绘制数据点和数值
-    ctx.fillStyle = '#4CAF50';
     actionKeys.forEach((key, index) => {
       const angle = index * angleStep - Math.PI / 2;
       const rate = successRates[key] ? successRates[key].rate : 0;
@@ -319,10 +542,44 @@ const RadarChart = ({ actions }) => {
       const x = centerX + dataRadius * Math.cos(angle);
       const y = centerY + dataRadius * Math.sin(angle);
       
+      // 检查是否是悬停点或选中点
+      const isHovered = hoveredPoint && hoveredPoint.index === index;
+      const isSelected = selectedActionType === key;
+      
       // 绘制数据点
-      ctx.beginPath();
-      ctx.arc(x, y, 4, 0, 2 * Math.PI);
-      ctx.fill();
+      if (isSelected) {
+        // 选中状态：紫色大圆点
+        ctx.fillStyle = '#9C27B0';
+        ctx.beginPath();
+        ctx.arc(x, y, 8, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        // 外圈动画效果
+        ctx.strokeStyle = '#9C27B0';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(x, y, 12, 0, 2 * Math.PI);
+        ctx.stroke();
+      } else if (isHovered) {
+        // 悬停状态：橙色圆点
+        ctx.fillStyle = '#FF5722';
+        ctx.beginPath();
+        ctx.arc(x, y, 6, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        // 外圈
+        ctx.strokeStyle = '#FF5722';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(x, y, 10, 0, 2 * Math.PI);
+        ctx.stroke();
+      } else {
+        // 普通状态：绿色圆点
+        ctx.fillStyle = '#4CAF50';
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, 2 * Math.PI);
+        ctx.fill();
+      }
       
       // 显示数值（只有当数值大于0时才显示）
       if (rate > 0) {
@@ -357,7 +614,14 @@ const RadarChart = ({ actions }) => {
         ctx.strokeRect(valueX - valueWidth/2 - 3, valueY - valueHeight/2 - 1, valueWidth + 6, valueHeight + 2);
         
         // 绘制数值文本
-        ctx.fillStyle = '#2E7D32';
+        let textColor = '#2E7D32';
+        if (isSelected) {
+          textColor = '#9C27B0';
+        } else if (isHovered) {
+          textColor = '#FF5722';
+        }
+        
+        ctx.fillStyle = textColor;
         ctx.fillText(valueText, valueX, valueY);
         
         // 恢复样式
@@ -369,12 +633,284 @@ const RadarChart = ({ actions }) => {
   return (
     <div className="radar-chart">
       <h2>動作成功率の分析</h2>
-      <canvas 
-        ref={canvasRef} 
-        width={700} 
-        height={600}
-        className="radar-canvas"
-      />
+      
+      {/* 使用说明 */}
+      <div style={{
+        backgroundColor: 'rgba(76, 175, 80, 0.1)',
+        border: '1px solid rgba(76, 175, 80, 0.3)',
+        borderRadius: '6px',
+        padding: '8px 12px',
+        marginBottom: '16px',
+        fontSize: '12px',
+        color: '#2E7D32'
+      }}>
+        <strong>使用方法:</strong> 
+        データポイントにマウスを合わせると詳細表示 | 
+        クリックすると固定表示 | 
+        Escキーまたは×ボタンで閉じる
+        
+        {/* Debug状态显示 */}
+        <div style={{ marginTop: '4px', fontSize: '10px', color: '#666' }}>
+          [Debug] 選択中: {selectedActionType || 'なし'} | 
+          Tooltip: {tooltipData ? 'あり' : 'なし'}
+        </div>
+      </div>
+      
+      <div style={{ position: 'relative' }}>
+        <canvas 
+          ref={canvasRef} 
+          width={700} 
+          height={600}
+          className="radar-canvas"
+          style={{ cursor: hoveredPoint || selectedActionType ? 'pointer' : 'default' }}
+        />
+        
+        {/* 悬停tooltip */}
+        {tooltipData && (
+          <div 
+            className="radar-tooltip"
+            style={{
+              position: 'fixed',
+              left: selectedActionType ? mousePos.x : mousePos.x,
+              top: selectedActionType ? mousePos.y : mousePos.y,
+              transform: selectedActionType ? 'translate(-50%, -50%)' : 'none',
+              backgroundColor: selectedActionType ? 'rgba(156, 39, 176, 0.95)' : 'rgba(0, 0, 0, 0.95)',
+              color: 'white',
+              padding: '16px',
+              borderRadius: '12px',
+              fontSize: '13px',
+              pointerEvents: selectedActionType ? 'auto' : 'none', // 只有在固定时才允许交互
+              zIndex: 1000,
+              boxShadow: selectedActionType 
+                ? '0 12px 48px rgba(156, 39, 176, 0.4)' 
+                : '0 8px 32px rgba(0, 0, 0, 0.4)',
+              minWidth: '280px',
+              maxWidth: selectedActionType ? '450px' : '380px',
+              maxHeight: selectedActionType ? '500px' : '450px',
+              overflowY: 'auto',
+              border: selectedActionType 
+                ? '3px solid rgba(156, 39, 176, 0.5)' 
+                : '2px solid rgba(255, 87, 34, 0.3)',
+              backdropFilter: 'blur(10px)',
+              transition: 'all 0.3s ease',
+              // 添加一些额外的样式确保可见性
+              opacity: 1,
+              visibility: 'visible'
+            }}
+          >
+            {/* Debug信息 */}
+            {selectedActionType && (
+              <div style={{ 
+                position: 'absolute', 
+                top: '-20px', 
+                left: '0', 
+                fontSize: '10px', 
+                color: '#4CAF50',
+                backgroundColor: 'rgba(0,0,0,0.8)',
+                padding: '2px 6px',
+                borderRadius: '3px'
+              }}>
+                固定中: {selectedActionType}
+              </div>
+            )}
+            
+            <div style={{ 
+              fontWeight: 'bold', 
+              marginBottom: '12px', 
+              borderBottom: selectedActionType ? '2px solid #9C27B0' : '2px solid #FF5722', 
+              paddingBottom: '8px',
+              color: selectedActionType ? '#E1BEE7' : '#FF5722',
+              fontSize: selectedActionType ? '18px' : '16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <span>{tooltipData.actionName}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ 
+                  fontSize: '12px', 
+                  color: '#ccc',
+                  fontWeight: 'normal'
+                }}>
+                  {tooltipData.actions.length}回
+                </span>
+                {selectedActionType && (
+                  <button
+                    onClick={() => {
+                      setSelectedActionType(null);
+                      setTooltipData(null);
+                      setHoveredPoint(null);
+                    }}
+                    style={{
+                      background: 'none',
+                      border: '1px solid #ccc',
+                      color: '#ccc',
+                      borderRadius: '50%',
+                      width: '24px',
+                      height: '24px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    title="閉じる (Esc)"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            </div>
+            
+            <div style={{ 
+              marginBottom: '12px', 
+              fontSize: '14px', 
+              color: '#4CAF50',
+              fontWeight: 'bold',
+              textAlign: 'center',
+              padding: '8px',
+              backgroundColor: 'rgba(76, 175, 80, 0.1)',
+              borderRadius: '6px',
+              border: '1px solid rgba(76, 175, 80, 0.3)'
+            }}>
+              成功率: {tooltipData.rate.toFixed(1)}% 
+              <span style={{ color: '#ccc', fontWeight: 'normal', marginLeft: '8px' }}>
+                ({tooltipData.success}/{tooltipData.total})
+              </span>
+            </div>
+            
+            {tooltipData.actions.length > 0 && (
+              <>
+                <div style={{ 
+                  fontWeight: 'bold', 
+                  marginBottom: '8px', 
+                  fontSize: '13px',
+                  color: '#FFF',
+                  borderBottom: '1px solid #444',
+                  paddingBottom: '4px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <span>動作リスト:</span>
+                  {selectedActionType && (
+                    <span style={{ 
+                      fontSize: '11px', 
+                      color: '#999',
+                      fontWeight: 'normal'
+                    }}>
+                      クリックで固定表示中
+                    </span>
+                  )}
+                </div>
+                <div style={{ 
+                  maxHeight: selectedActionType ? '350px' : '280px', 
+                  overflowY: 'auto',
+                  paddingRight: '4px'
+                }}>
+                  {tooltipData.actions
+                    .sort((a, b) => a.start_id - b.start_id) // 按时间排序
+                    .map((action, index) => {
+                    let statusIcon;
+                    let statusColor;
+                    if (action.isLastAction) {
+                      statusIcon = "⭕";
+                      statusColor = "#FFC107";
+                    } else {
+                      statusIcon = action.isSuccess ? "🟢" : "❌";
+                      statusColor = action.isSuccess ? "#4CAF50" : "#F44336";
+                    }
+                    
+                    return (
+                      <div 
+                        key={index}
+                        onClick={(e) => {
+                          e.stopPropagation(); // 防止事件冒泡
+                          handleActionItemClick(action.start_id);
+                        }}
+                        style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          padding: '8px 10px',
+                          marginBottom: '4px',
+                          backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          transition: 'all 0.2s ease',
+                          border: '1px solid rgba(255, 255, 255, 0.1)',
+                          position: 'relative'
+                        }}
+                        onMouseEnter={(e) => {
+                          const hoverColor = selectedActionType ? '#9C27B0' : '#FF5722';
+                          e.currentTarget.style.backgroundColor = `rgba(${selectedActionType ? '156, 39, 176' : '255, 87, 34'}, 0.2)`;
+                          e.currentTarget.style.borderColor = hoverColor;
+                          e.currentTarget.style.transform = 'translateX(4px)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
+                          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                          e.currentTarget.style.transform = 'translateX(0px)';
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+                          <span style={{ 
+                            marginRight: '8px', 
+                            fontSize: '14px',
+                            filter: `drop-shadow(0 0 2px ${statusColor})`
+                          }}>
+                            {statusIcon}
+                          </span>
+                          <span style={{ 
+                            fontWeight: '500',
+                            color: '#FFF'
+                          }}>
+                            {action.label_names && action.label_names[0]}
+                          </span>
+                        </div>
+                        <div style={{ 
+                          color: '#bbb', 
+                          fontSize: '11px',
+                          textAlign: 'right',
+                          lineHeight: '1.2'
+                        }}>
+                          <div>{frameToTime(action.start_id)} - {frameToTime(action.end_id)}</div>
+                          <div style={{ color: '#888', fontSize: '10px' }}>
+                            {action.end_id - action.start_id}秒
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+            
+            <div style={{ 
+              marginTop: '12px', 
+              fontSize: '11px', 
+              color: '#888',
+              borderTop: '1px solid #444',
+              paddingTop: '8px',
+              textAlign: 'center',
+              fontStyle: 'italic'
+            }}>
+              {selectedActionType ? (
+                <>
+                  💡 クリックして録画の該当時間に移動 | 
+                  <span style={{ color: '#E1BEE7' }}> クリックまたはEscで閉じる</span>
+                </>
+              ) : (
+                <>
+                  💡 クリックして録画の該当時間に移動 | 
+                  <span style={{ color: '#FF8A65' }}> データポイントをクリックで固定表示</span>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
