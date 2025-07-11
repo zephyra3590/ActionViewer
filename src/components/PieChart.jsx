@@ -617,13 +617,13 @@ const PieChart = ({ actions, onActionClick }) => {
       
       {/* 使用说明 */}
       <div style={{
-        backgroundColor: 'rgba(255, 107, 107, 0.1)',
-        border: '1px solid rgba(255, 107, 107, 0.3)',
+        backgroundColor: 'rgba(229, 115, 115, 0.08)',
+        border: '1px solid rgba(229, 115, 115, 0.25)',
         borderRadius: '6px',
         padding: '8px 12px',
         marginBottom: '16px',
         fontSize: '12px',
-        color: '#C62828'
+        color: '#8D4E85'
       }}>
         <strong>使用方法:</strong> 
         切片にマウスを合わせると詳細表示 | 
@@ -654,7 +654,7 @@ const PieChart = ({ actions, onActionClick }) => {
               left: selectedSlice !== null ? mousePos.x : mousePos.x,
               top: selectedSlice !== null ? mousePos.y : mousePos.y,
               transform: selectedSlice !== null ? 'translate(-50%, -50%)' : 'none',
-              backgroundColor: selectedSlice !== null ? 'rgba(255, 107, 107, 0.95)' : 'rgba(0, 0, 0, 0.95)',
+              backgroundColor: selectedSlice !== null ? 'rgba(168, 85, 146, 0.95)' : 'rgba(64, 81, 137, 0.95)', // 柔和紫粉色和蓝灰色
               color: 'white',
               padding: '16px',
               borderRadius: '12px',
@@ -662,15 +662,15 @@ const PieChart = ({ actions, onActionClick }) => {
               pointerEvents: selectedSlice !== null ? 'auto' : 'none',
               zIndex: 1000,
               boxShadow: selectedSlice !== null 
-                ? '0 12px 48px rgba(255, 107, 107, 0.4)' 
-                : '0 8px 32px rgba(0, 0, 0, 0.4)',
+                ? '0 12px 48px rgba(168, 85, 146, 0.3)' 
+                : '0 8px 32px rgba(64, 81, 137, 0.4)',
               minWidth: '280px',
               maxWidth: selectedSlice !== null ? '450px' : '380px',
               maxHeight: selectedSlice !== null ? '500px' : '450px',
               overflowY: 'auto',
               border: selectedSlice !== null 
-                ? '3px solid rgba(255, 107, 107, 0.5)' 
-                : '2px solid rgba(255, 87, 34, 0.3)',
+                ? '3px solid rgba(168, 85, 146, 0.4)' 
+                : '2px solid rgba(120, 144, 156, 0.3)',
               backdropFilter: 'blur(10px)',
               transition: 'all 0.3s ease',
               opacity: 1,
@@ -696,9 +696,9 @@ const PieChart = ({ actions, onActionClick }) => {
             <div style={{ 
               fontWeight: 'bold', 
               marginBottom: '12px', 
-              borderBottom: selectedSlice !== null ? '2px solid #FF6B6B' : '2px solid #FF5722', 
+              borderBottom: selectedSlice !== null ? '2px solid #D1A3C4' : '2px solid #789CC4', 
               paddingBottom: '8px',
-              color: selectedSlice !== null ? '#FFB3B3' : '#FF5722',
+              color: selectedSlice !== null ? '#F0D7E8' : '#B8D4FF',
               fontSize: selectedSlice !== null ? '18px' : '16px',
               display: 'flex',
               alignItems: 'center',
@@ -744,13 +744,13 @@ const PieChart = ({ actions, onActionClick }) => {
             <div style={{ 
               marginBottom: '12px', 
               fontSize: '14px', 
-              color: '#FF6B6B',
+              color: '#E57373',
               fontWeight: 'bold',
               textAlign: 'center',
               padding: '8px',
-              backgroundColor: 'rgba(255, 107, 107, 0.1)',
+              backgroundColor: 'rgba(229, 115, 115, 0.15)',
               borderRadius: '6px',
-              border: '1px solid rgba(255, 107, 107, 0.3)'
+              border: '1px solid rgba(229, 115, 115, 0.3)'
             }}>
               失误率: {tooltipData.percentage.toFixed(1)}% 
               <span style={{ color: '#ccc', fontWeight: 'normal', marginLeft: '8px' }}>
@@ -810,8 +810,8 @@ const PieChart = ({ actions, onActionClick }) => {
                             position: 'relative'
                           }}
                           onMouseEnter={(e) => {
-                            const hoverColor = selectedSlice !== null ? '#FF6B6B' : '#FF5722';
-                            e.currentTarget.style.backgroundColor = `rgba(${selectedSlice !== null ? '255, 107, 107' : '255, 87, 34'}, 0.2)`;
+                            const hoverColor = selectedSlice !== null ? '#D1A3C4' : '#789CC4';
+                            e.currentTarget.style.backgroundColor = `rgba(${selectedSlice !== null ? '209, 163, 196' : '120, 156, 196'}, 0.2)`;
                             e.currentTarget.style.borderColor = hoverColor;
                             e.currentTarget.style.transform = 'translateX(4px)';
                           }}
@@ -869,12 +869,12 @@ const PieChart = ({ actions, onActionClick }) => {
               {selectedSlice !== null ? (
                 <>
                   💡 クリックして録画の該当時間に移動 | 
-                  <span style={{ color: '#FFB3B3' }}> クリックまたはEscで閉じる</span>
+                  <span style={{ color: '#F0D7E8' }}> クリックまたはEscで閉じる</span>
                 </>
               ) : (
                 <>
                   💡 クリックして録画の該当時間に移動 | 
-                  <span style={{ color: '#FF8A65' }}> 切片をクリックで固定表示</span>
+                  <span style={{ color: '#A5C9EA' }}> 切片をクリックで固定表示</span>
                 </>
               )}
             </div>
