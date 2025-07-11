@@ -182,6 +182,7 @@ function App() {
   
   const handleActionClick = (startFrame) => {
     setCurrentFrame(startFrame);
+    console.log('Video jump to frame:', startFrame); // 添加调试日志
   };
   
   const analyzeVideo = async () => {
@@ -349,9 +350,12 @@ function App() {
           />
         )}
         
-        {/* 饼图显示区域 */}
+        {/* 饼图显示区域 - 添加 onActionClick 属性 */}
         {actions.length > 0 && (
-          <PieChart actions={actions} />
+          <PieChart 
+            actions={actions} 
+            onActionClick={handleActionClick} 
+          />
         )}
       </main>
       <footer className="app-footer">
