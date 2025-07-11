@@ -262,7 +262,7 @@ const RadarChart = ({ actions, onActionClick }) => {
       setHoveredPoint(pointData); // 保持悬停状态以便绘制高亮
       
       // 设置固定tooltip的位置（屏幕中央偏右上）
-      const fixedX = window.innerWidth * 0.6;
+      const fixedX = window.innerWidth * 0.76;
       const fixedY = window.innerHeight * 0.3;
       setMousePos({ x: fixedX, y: fixedY });
       console.log('Tooltip fixed at:', fixedX, fixedY);
