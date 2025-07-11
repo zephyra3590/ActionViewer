@@ -80,6 +80,14 @@ const PieChart = ({ actions, onActionClick }) => {
         return;
       }
       
+      // **新增：如果当前动作是サーブ，跳过失误统计**
+      const currentActionLabelId = Object.keys(actionLabels).find(key => 
+        actionLabels[key] === currentActionName
+      );
+      if (currentActionLabelId === "0") { // "0" 对应 "サーブ"
+        return;
+      }
+      
       // 检查当前动作是否失误
       const isSuccess = checkActionSuccess(action, sortedActions, index);
       
