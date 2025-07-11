@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import './PieChart.css';
 
-const PieChart = ({ actions }) => {
+const PieChart = ({ actions, onActionClick }) => {
   const canvasRef = useRef(null);
   const [hoveredSlice, setHoveredSlice] = useState(null);
+  const [selectedSlice, setSelectedSlice] = useState(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [pieData, setPieData] = useState([]);
   const [colors, setColors] = useState([]);
-  
+  const [tooltipData, setTooltipData] = useState(null);
+
   // 动作类型映射（与 RadarChart 中相同）
   const actionLabels = {
     "0": "サーブ",
@@ -102,7 +104,20 @@ const PieChart = ({ actions }) => {
             const prevActionName = prevAction.label_names && prevAction.label_names[0];
             const combinationKey = `${prevActionName} → ${currentActionName}`;
             
-            failureCombinations[combinationKey] = (failureCombinations[combinationKey] || 0) + 1;
+            // 存储详细信息
+            if (!failureCombinations[combinationKey]) {
+              failureCombinations[combinationKey] = {
+                count: 0,
+                actions: []
+              };
+            }
+            failureCombinations[combinationKey].count++;
+            failureCombinations[combinationKey].actions.push({
+              prevAction: prevAction,
+              currentAction: action,
+              isSuccess: false,
+              isLastAction: false
+            });
           }
           // 如果前一个动作也是失误，则不记录任何组合
         }
@@ -115,24 +130,27 @@ const PieChart = ({ actions }) => {
 
   // 处理数据，合并小于5%的组合为【その他】
   const processDataForPieChart = (failureCombinations) => {
-    const totalFailures = Object.values(failureCombinations).reduce((sum, count) => sum + count, 0);
+    const totalFailures = Object.values(failureCombinations).reduce((sum, item) => sum + item.count, 0);
     
     if (totalFailures === 0) return [];
     
     const processedData = [];
     let othersCount = 0;
+    let othersActions = [];
     
-    Object.entries(failureCombinations).forEach(([combination, count]) => {
-      const percentage = (count / totalFailures) * 100;
+    Object.entries(failureCombinations).forEach(([combination, data]) => {
+      const percentage = (data.count / totalFailures) * 100;
       
       if (percentage >= 5) {
         processedData.push({
           label: combination,
-          count: count,
-          percentage: percentage
+          count: data.count,
+          percentage: percentage,
+          actions: data.actions
         });
       } else {
-        othersCount += count;
+        othersCount += data.count;
+        othersActions.push(...data.actions);
       }
     });
     
@@ -142,7 +160,8 @@ const PieChart = ({ actions }) => {
       processedData.push({
         label: 'その他',
         count: othersCount,
-        percentage: othersPercentage
+        percentage: othersPercentage,
+        actions: othersActions
       });
     }
     
@@ -163,18 +182,15 @@ const PieChart = ({ actions }) => {
 
   // 颜色加亮函数
   const lightenColor = useCallback((color, percent) => {
-    // 添加安全检查
     if (!color || typeof color !== 'string') {
-      return '#000000'; // 返回默认颜色
+      return '#000000';
     }
     
-    // 确保颜色格式正确
     const cleanColor = color.startsWith('#') ? color : '#' + color;
     const num = parseInt(cleanColor.replace("#", ""), 16);
     
-    // 检查是否为有效的十六进制颜色
     if (isNaN(num)) {
-      return '#000000'; // 返回默认颜色
+      return '#000000';
     }
     
     const amt = Math.round(2.55 * percent);
@@ -184,7 +200,7 @@ const PieChart = ({ actions }) => {
     return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 + (B < 255 ? B < 1 ? 0 : B : 255) * 0x100 + (G < 255 ? G < 1 ? 0 : G : 255)).toString(16).slice(1);
   }, []);
 
-  // 检测鼠标是否在某个扇形内 - 移除对 pieData 的依赖
+  // 检测鼠标是否在某个扇形内
   const getSliceAtPoint = useCallback((x, y, centerX, centerY, radius, currentPieData) => {
     const dx = x - centerX;
     const dy = y - centerY;
@@ -207,13 +223,57 @@ const PieChart = ({ actions }) => {
     return null;
   }, []);
 
-  // 处理鼠标移动 - 使用 useRef 来避免依赖 pieData
+  // 时间格式化函数
+  const frameToTime = (frame) => {
+    const totalSeconds = frame;
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  // 处理动作点击
+  const handleActionItemClick = (startFrame) => {
+    if (onActionClick) {
+      onActionClick(startFrame);
+    }
+  };
+
+  // 处理切片点击（固定显示该切片）
+  const handleSliceClick = (sliceIndex, sliceData) => {
+    console.log('Slice clicked:', sliceIndex, 'Current selected:', selectedSlice);
+    
+    if (selectedSlice === sliceIndex) {
+      // 如果点击的是已选中的切片，则取消选择
+      console.log('Deselecting current slice');
+      setSelectedSlice(null);
+      setTooltipData(null);
+      setHoveredSlice(null);
+    } else {
+      // 选择新的切片
+      console.log('Selecting new slice:', sliceIndex);
+      setSelectedSlice(sliceIndex);
+      setTooltipData(sliceData);
+      setHoveredSlice(sliceIndex);
+      
+      // 设置固定tooltip的位置（屏幕中央偏右上）
+      const fixedX = window.innerWidth * 0.76;
+      const fixedY = window.innerHeight * 0.3;
+      setMousePos({ x: fixedX, y: fixedY });
+    }
+  };
+
+  // 处理鼠标移动
   const pieDataRef = useRef(pieData);
   pieDataRef.current = pieData;
 
   const handleMouseMove = useCallback((event) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    
+    // 如果有选中的切片，不处理悬停
+    if (selectedSlice !== null) {
+      return;
+    }
     
     const rect = canvas.getBoundingClientRect();
     const x = event.clientX - rect.left;
@@ -232,44 +292,118 @@ const PieChart = ({ actions }) => {
     const sliceIndex = getSliceAtPoint(canvasX, canvasY, centerX, centerY, radius, pieDataRef.current);
     
     setHoveredSlice(sliceIndex);
-    setMousePos({ x: event.clientX, y: event.clientY });
-  }, [getSliceAtPoint]);
+    
+    if (sliceIndex !== null) {
+      setTooltipData(pieDataRef.current[sliceIndex]);
+      
+      // 智能调整tooltip位置，避免超出屏幕边界
+      const tooltipWidth = 350;
+      const tooltipHeight = 400;
+      let tooltipX = event.clientX + 15;
+      let tooltipY = event.clientY - 10;
+      
+      // 防止tooltip超出右边界
+      if (tooltipX + tooltipWidth > window.innerWidth) {
+        tooltipX = event.clientX - tooltipWidth - 15;
+      }
+      
+      // 防止tooltip超出底部边界
+      if (tooltipY + tooltipHeight > window.innerHeight) {
+        tooltipY = event.clientY - tooltipHeight + 10;
+      }
+      
+      // 防止tooltip超出顶部边界
+      if (tooltipY < 0) {
+        tooltipY = 10;
+      }
+      
+      setMousePos({ x: tooltipX, y: tooltipY });
+    } else {
+      setTooltipData(null);
+    }
+  }, [getSliceAtPoint, selectedSlice]);
 
   // 处理鼠标离开
   const handleMouseLeave = useCallback(() => {
-    setHoveredSlice(null);
-  }, []);
+    if (selectedSlice === null) {
+      setHoveredSlice(null);
+      setTooltipData(null);
+    }
+  }, [selectedSlice]);
 
-  // 第一个 useEffect：只处理数据计算和设置，不处理事件监听器
+  // 处理点击事件
+  const handleCanvasClick = useCallback((event) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+    const canvasX = x * scaleX;
+    const canvasY = y * scaleY;
+    
+    const centerX = canvas.width * 0.35;
+    const centerY = canvas.height / 2;
+    const radius = Math.min(centerX * 0.8, centerY * 0.8);
+    
+    const clickedSliceIndex = getSliceAtPoint(canvasX, canvasY, centerX, centerY, radius, pieData);
+    
+    if (clickedSliceIndex !== null) {
+      event.preventDefault();
+      event.stopPropagation();
+      handleSliceClick(clickedSliceIndex, pieData[clickedSliceIndex]);
+    } else {
+      // 点击空白区域，取消选择
+      setSelectedSlice(null);
+      setTooltipData(null);
+      setHoveredSlice(null);
+    }
+  }, [pieData, getSliceAtPoint]);
+
+  // 第一个 useEffect：只处理数据计算和设置
   useEffect(() => {
-    // 获取失误组合数据
     const failureCombinations = calculateFailureCombinations(actions);
     const processedData = processDataForPieChart(failureCombinations);
     const generatedColors = generateColors(processedData.length);
     
-    // 确保颜色数组和数据数组长度匹配
     const safeColors = generatedColors.length >= processedData.length 
       ? generatedColors 
       : [...generatedColors, ...Array(processedData.length - generatedColors.length).fill('#CCCCCC')];
     
     setPieData(processedData);
     setColors(safeColors);
-  }, [actions]); // 只依赖 actions
+  }, [actions]);
 
-  // 第二个 useEffect：只处理事件监听器
+  // 第二个 useEffect：处理事件监听器
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     
-    // 添加事件监听器
     canvas.addEventListener('mousemove', handleMouseMove);
     canvas.addEventListener('mouseleave', handleMouseLeave);
+    canvas.addEventListener('click', handleCanvasClick);
+    
+    // 添加键盘事件监听器
+    const handleKeyPress = (event) => {
+      if (event.key === 'Escape') {
+        setSelectedSlice(null);
+        setTooltipData(null);
+        setHoveredSlice(null);
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyPress);
     
     return () => {
       canvas.removeEventListener('mousemove', handleMouseMove);
       canvas.removeEventListener('mouseleave', handleMouseLeave);
+      canvas.removeEventListener('click', handleCanvasClick);
+      document.removeEventListener('keydown', handleKeyPress);
     };
-  }, [handleMouseMove, handleMouseLeave]); // 这些回调现在是稳定的
+  }, [handleMouseMove, handleMouseLeave, handleCanvasClick]);
 
   // 第三个 useEffect：处理绘制
   useEffect(() => {
@@ -278,18 +412,16 @@ const PieChart = ({ actions }) => {
     
     const ctx = canvas.getContext('2d');
     
-    // 使用更大的画布尺寸，调整布局
     const canvasWidth = canvas.width;
     const canvasHeight = canvas.height;
-    const centerX = canvasWidth * 0.35; // 将饼图向左移动
+    const centerX = canvasWidth * 0.35;
     const centerY = canvasHeight / 2;
-    const radius = Math.min(centerX * 0.8, centerY * 0.8); // 减小半径避免重叠
+    const radius = Math.min(centerX * 0.8, centerY * 0.8);
     
     // 清空画布
     ctx.clearRect(0, 0, canvasWidth, canvasHeight);
     
     if (pieData.length === 0) {
-      // 没有失误数据时显示提示
       ctx.fillStyle = '#666';
       ctx.font = '18px Arial';
       ctx.textAlign = 'center';
@@ -298,28 +430,36 @@ const PieChart = ({ actions }) => {
       return;
     }
     
-    // 确保 colors 数组有足够的元素
     if (colors.length === 0) {
-      return; // 等待颜色数据加载
+      return;
     }
     
     // 绘制饼图
-    let currentAngle = -Math.PI / 2; // 从顶部开始
+    let currentAngle = -Math.PI / 2;
     
     pieData.forEach((data, index) => {
       const sliceAngle = (data.percentage / 100) * 2 * Math.PI;
       const isHovered = hoveredSlice === index;
+      const isSelected = selectedSlice === index;
       
-      // 安全获取颜色，如果索引超出范围则使用默认颜色
       const baseColor = colors[index] || '#CCCCCC';
       
-      // 如果是悬停状态，稍微向外扩展
-      const currentRadius = isHovered ? radius * 1.1 : radius;
-      const offsetX = isHovered ? Math.cos(currentAngle + sliceAngle / 2) * 8 : 0;
-      const offsetY = isHovered ? Math.sin(currentAngle + sliceAngle / 2) * 8 : 0;
+      // 选中状态优先于悬停状态
+      const currentRadius = (isSelected || isHovered) ? radius * 1.1 : radius;
+      const offsetX = (isSelected || isHovered) ? Math.cos(currentAngle + sliceAngle / 2) * 8 : 0;
+      const offsetY = (isSelected || isHovered) ? Math.sin(currentAngle + sliceAngle / 2) * 8 : 0;
       
       // 绘制扇形
-      ctx.fillStyle = isHovered ? lightenColor(baseColor, 20) : baseColor;
+      let fillColor;
+      if (isSelected) {
+        fillColor = lightenColor(baseColor, 30); // 选中状态更亮
+      } else if (isHovered) {
+        fillColor = lightenColor(baseColor, 20); // 悬停状态稍亮
+      } else {
+        fillColor = baseColor;
+      }
+      
+      ctx.fillStyle = fillColor;
       ctx.beginPath();
       ctx.moveTo(centerX + offsetX, centerY + offsetY);
       ctx.arc(centerX + offsetX, centerY + offsetY, currentRadius, currentAngle, currentAngle + sliceAngle);
@@ -327,8 +467,8 @@ const PieChart = ({ actions }) => {
       ctx.fill();
       
       // 绘制边框
-      ctx.strokeStyle = isHovered ? '#333' : '#fff';
-      ctx.lineWidth = isHovered ? 4 : 3;
+      ctx.strokeStyle = isSelected ? '#9C27B0' : (isHovered ? '#FF5722' : '#fff');
+      ctx.lineWidth = isSelected ? 5 : (isHovered ? 4 : 3);
       ctx.stroke();
       
       // 只有当百分比大于10%时才显示百分比标签
@@ -361,16 +501,16 @@ const PieChart = ({ actions }) => {
     });
     
     // 绘制改进的图例
-    drawImprovedLegend(ctx, pieData, colors, canvasWidth, canvasHeight, hoveredSlice);
+    drawImprovedLegend(ctx, pieData, colors, canvasWidth, canvasHeight, hoveredSlice, selectedSlice);
     
-  }, [pieData, colors, hoveredSlice, lightenColor]);
+  }, [pieData, colors, hoveredSlice, selectedSlice, lightenColor]);
 
-  const drawImprovedLegend = (ctx, pieData, colors, canvasWidth, canvasHeight, hoveredSlice = null) => {
-    const legendStartX = canvasWidth * 0.65; // 图例位置向右移动
+  const drawImprovedLegend = (ctx, pieData, colors, canvasWidth, canvasHeight, hoveredSlice = null, selectedSlice = null) => {
+    const legendStartX = canvasWidth * 0.65;
     const legendStartY = 40;
     const lineHeight = 28;
     const maxWidth = canvasWidth - legendStartX - 20;
-    const maxLegendHeight = canvasHeight - 80; // 为图例设置最大高度，留出底部空间
+    const maxLegendHeight = canvasHeight - 80;
     
     ctx.font = 'bold 13px Arial';
     ctx.textAlign = 'left';
@@ -383,8 +523,7 @@ const PieChart = ({ actions }) => {
     
     ctx.font = 'bold 13px Arial';
     
-    // 计算最多可以显示的项目数
-    const availableHeight = maxLegendHeight - 50; // 减去标题和总计信息的空间
+    const availableHeight = maxLegendHeight - 50;
     const maxVisibleItems = Math.floor(availableHeight / lineHeight);
     const visibleData = pieData.slice(0, maxVisibleItems);
     const hiddenItemsCount = pieData.length - maxVisibleItems;
@@ -392,19 +531,29 @@ const PieChart = ({ actions }) => {
     visibleData.forEach((data, index) => {
       const y = legendStartY + 20 + index * lineHeight;
       const isHovered = hoveredSlice === index;
+      const isSelected = selectedSlice === index;
       
-      // 安全获取颜色
       const baseColor = colors[index] || '#CCCCCC';
       
-      // 绘制颜色方块 - 使用更大的方块，悬停时高亮
-      ctx.fillStyle = isHovered ? lightenColor(baseColor, 30) : baseColor;
-      const rectSize = isHovered ? 18 : 16;
-      const rectOffset = isHovered ? -1 : 0;
+      // 绘制颜色方块
+      let rectColor;
+      if (isSelected) {
+        rectColor = lightenColor(baseColor, 30);
+      } else if (isHovered) {
+        rectColor = lightenColor(baseColor, 20);
+      } else {
+        rectColor = baseColor;
+      }
+      
+      const rectSize = (isSelected || isHovered) ? 18 : 16;
+      const rectOffset = (isSelected || isHovered) ? -1 : 0;
+      
+      ctx.fillStyle = rectColor;
       ctx.fillRect(legendStartX + rectOffset, y - 8 + rectOffset, rectSize, rectSize);
       
       // 绘制方块边框
-      ctx.strokeStyle = isHovered ? '#000' : '#333';
-      ctx.lineWidth = isHovered ? 2 : 1;
+      ctx.strokeStyle = isSelected ? '#9C27B0' : (isHovered ? '#FF5722' : '#333');
+      ctx.lineWidth = isSelected ? 3 : (isHovered ? 2 : 1);
       ctx.strokeRect(legendStartX + rectOffset, y - 8 + rectOffset, rectSize, rectSize);
       
       // 准备文本
@@ -412,20 +561,17 @@ const PieChart = ({ actions }) => {
       const count = `(${data.count}回)`;
       let labelText = data.label;
       
-      // 如果标签太长，进行截断处理
       const textX = legendStartX + 25;
-      ctx.fillStyle = isHovered ? '#000' : '#333';
-      ctx.font = isHovered ? 'bold 14px Arial' : 'bold 13px Arial';
+      ctx.fillStyle = isSelected ? '#9C27B0' : (isHovered ? '#FF5722' : '#333');
+      ctx.font = isSelected ? 'bold 14px Arial' : (isHovered ? 'bold 14px Arial' : 'bold 13px Arial');
       
       // 测量文本宽度并进行截断
       const fullText = `${labelText} ${percentage} ${count}`;
       const fullTextWidth = ctx.measureText(fullText).width;
       
       if (fullTextWidth <= maxWidth) {
-        // 一行可以放下
         ctx.fillText(fullText, textX, y);
       } else {
-        // 需要截断标签文本
         const maxLabelWidth = maxWidth - ctx.measureText(`${percentage} ${count}`).width - 10;
         let truncatedLabel = labelText;
         
@@ -437,18 +583,16 @@ const PieChart = ({ actions }) => {
           truncatedLabel += '...';
         }
         
-        // 分行显示
         ctx.fillText(truncatedLabel, textX, y - 6);
         
-        ctx.font = isHovered ? '12px Arial' : '11px Arial';
-        ctx.fillStyle = isHovered ? '#333' : '#666';
+        ctx.font = (isSelected || isHovered) ? '12px Arial' : '11px Arial';
+        ctx.fillStyle = (isSelected || isHovered) ? '#666' : '#666';
         ctx.fillText(`${percentage} ${count}`, textX, y + 8);
-        ctx.font = isHovered ? 'bold 14px Arial' : 'bold 13px Arial';
-        ctx.fillStyle = isHovered ? '#000' : '#333';
+        ctx.font = isSelected ? 'bold 14px Arial' : (isHovered ? 'bold 14px Arial' : 'bold 13px Arial');
+        ctx.fillStyle = isSelected ? '#9C27B0' : (isHovered ? '#FF5722' : '#333');
       }
     });
     
-    // 如果有隐藏的项目，显示提示
     if (hiddenItemsCount > 0) {
       const moreY = legendStartY + 20 + visibleData.length * lineHeight;
       ctx.fillStyle = '#999';
@@ -456,7 +600,6 @@ const PieChart = ({ actions }) => {
       ctx.fillText(`... 还有 ${hiddenItemsCount} 个项目`, legendStartX + 25, moreY);
     }
     
-    // 绘制总计信息
     const totalFailures = pieData.reduce((sum, data) => sum + data.count, 0);
     const totalY = Math.min(
       legendStartY + 30 + visibleData.length * lineHeight + (hiddenItemsCount > 0 ? 20 : 0),
@@ -467,40 +610,273 @@ const PieChart = ({ actions }) => {
     ctx.font = '12px Arial';
     ctx.fillText(`総失误数: ${totalFailures}回`, legendStartX, totalY);
   };
-  
+
   return (
     <div className="pie-chart">
       <h2>失误組合の分析</h2>
+      
+      {/* 使用说明 */}
+      <div style={{
+        backgroundColor: 'rgba(255, 107, 107, 0.1)',
+        border: '1px solid rgba(255, 107, 107, 0.3)',
+        borderRadius: '6px',
+        padding: '8px 12px',
+        marginBottom: '16px',
+        fontSize: '12px',
+        color: '#C62828'
+      }}>
+        <strong>使用方法:</strong> 
+        切片にマウスを合わせると詳細表示 | 
+        クリックすると固定表示 | 
+        Escキーまたは×ボタンで閉じる
+        
+        <div style={{ marginTop: '4px', fontSize: '10px', color: '#666' }}>
+          [Debug] 選択中: {selectedSlice !== null ? `切片${selectedSlice}` : 'なし'} | 
+          Tooltip: {tooltipData ? 'あり' : 'なし'}
+        </div>
+      </div>
+      
       <div style={{ position: 'relative' }}>
         <canvas 
           ref={canvasRef} 
           width={800} 
-          height={600} // 增加画布高度来容纳更多图例项目
+          height={600}
           className="pie-canvas"
-          style={{ cursor: hoveredSlice !== null ? 'pointer' : 'default' }}
+          style={{ cursor: (hoveredSlice !== null || selectedSlice !== null) ? 'pointer' : 'default' }}
         />
-        {hoveredSlice !== null && pieData[hoveredSlice] && (
+        
+        {/* 详细tooltip */}
+        {tooltipData && (
           <div 
-            className="tooltip"
+            className="pie-tooltip"
             style={{
               position: 'fixed',
-              left: mousePos.x + 10,
-              top: mousePos.y - 10,
-              backgroundColor: 'rgba(0, 0, 0, 0.9)',
+              left: selectedSlice !== null ? mousePos.x : mousePos.x,
+              top: selectedSlice !== null ? mousePos.y : mousePos.y,
+              transform: selectedSlice !== null ? 'translate(-50%, -50%)' : 'none',
+              backgroundColor: selectedSlice !== null ? 'rgba(255, 107, 107, 0.95)' : 'rgba(0, 0, 0, 0.95)',
               color: 'white',
-              padding: '8px 12px',
-              borderRadius: '6px',
-              fontSize: '14px',
-              fontWeight: 'bold',
-              pointerEvents: 'none',
+              padding: '16px',
+              borderRadius: '12px',
+              fontSize: '13px',
+              pointerEvents: selectedSlice !== null ? 'auto' : 'none',
               zIndex: 1000,
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.3)',
-              whiteSpace: 'nowrap'
+              boxShadow: selectedSlice !== null 
+                ? '0 12px 48px rgba(255, 107, 107, 0.4)' 
+                : '0 8px 32px rgba(0, 0, 0, 0.4)',
+              minWidth: '280px',
+              maxWidth: selectedSlice !== null ? '450px' : '380px',
+              maxHeight: selectedSlice !== null ? '500px' : '450px',
+              overflowY: 'auto',
+              border: selectedSlice !== null 
+                ? '3px solid rgba(255, 107, 107, 0.5)' 
+                : '2px solid rgba(255, 87, 34, 0.3)',
+              backdropFilter: 'blur(10px)',
+              transition: 'all 0.3s ease',
+              opacity: 1,
+              visibility: 'visible'
             }}
           >
-            <div>{pieData[hoveredSlice].label}</div>
-            <div style={{ fontSize: '12px', color: '#ccc', marginTop: '2px' }}>
-              {pieData[hoveredSlice].percentage.toFixed(1)}% ({pieData[hoveredSlice].count}回)
+            {/* Debug信息 */}
+            {selectedSlice !== null && (
+              <div style={{ 
+                position: 'absolute', 
+                top: '-20px', 
+                left: '0', 
+                fontSize: '10px', 
+                color: '#4CAF50',
+                backgroundColor: 'rgba(0,0,0,0.8)',
+                padding: '2px 6px',
+                borderRadius: '3px'
+              }}>
+                固定中: 切片{selectedSlice}
+              </div>
+            )}
+            
+            <div style={{ 
+              fontWeight: 'bold', 
+              marginBottom: '12px', 
+              borderBottom: selectedSlice !== null ? '2px solid #FF6B6B' : '2px solid #FF5722', 
+              paddingBottom: '8px',
+              color: selectedSlice !== null ? '#FFB3B3' : '#FF5722',
+              fontSize: selectedSlice !== null ? '18px' : '16px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between'
+            }}>
+              <span>{tooltipData.label}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <span style={{ 
+                  fontSize: '12px', 
+                  color: '#ccc',
+                  fontWeight: 'normal'
+                }}>
+                  {tooltipData.count}回
+                </span>
+                {selectedSlice !== null && (
+                  <button
+                    onClick={() => {
+                      setSelectedSlice(null);
+                      setTooltipData(null);
+                      setHoveredSlice(null);
+                    }}
+                    style={{
+                      background: 'none',
+                      border: '1px solid #ccc',
+                      color: '#ccc',
+                      borderRadius: '50%',
+                      width: '24px',
+                      height: '24px',
+                      cursor: 'pointer',
+                      fontSize: '14px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    title="閉じる (Esc)"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+            </div>
+            
+            <div style={{ 
+              marginBottom: '12px', 
+              fontSize: '14px', 
+              color: '#FF6B6B',
+              fontWeight: 'bold',
+              textAlign: 'center',
+              padding: '8px',
+              backgroundColor: 'rgba(255, 107, 107, 0.1)',
+              borderRadius: '6px',
+              border: '1px solid rgba(255, 107, 107, 0.3)'
+            }}>
+              失误率: {tooltipData.percentage.toFixed(1)}% 
+              <span style={{ color: '#ccc', fontWeight: 'normal', marginLeft: '8px' }}>
+                ({tooltipData.count}回)
+              </span>
+            </div>
+            
+            {tooltipData.actions && tooltipData.actions.length > 0 && (
+              <>
+                <div style={{ 
+                  fontWeight: 'bold', 
+                  marginBottom: '8px', 
+                  fontSize: '13px',
+                  color: '#FFF',
+                  borderBottom: '1px solid #444',
+                  paddingBottom: '4px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center'
+                }}>
+                  <span>失误組合リスト:</span>
+                  {selectedSlice !== null && (
+                    <span style={{ 
+                      fontSize: '11px', 
+                      color: '#999',
+                      fontWeight: 'normal'
+                    }}>
+                      クリックで固定表示中
+                    </span>
+                  )}
+                </div>
+                <div style={{ 
+                  maxHeight: selectedSlice !== null ? '350px' : '280px', 
+                  overflowY: 'auto',
+                  paddingRight: '4px'
+                }}>
+                  {tooltipData.actions
+                    .sort((a, b) => a.currentAction.start_id - b.currentAction.start_id)
+                    .map((actionPair, index) => {
+                      return (
+                        <div 
+                          key={index}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // 跳转到前一个动作的开始时间点
+                            handleActionItemClick(actionPair.prevAction.start_id);
+                          }}
+                          style={{
+                            padding: '10px',
+                            marginBottom: '6px',
+                            backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                            borderRadius: '8px',
+                            cursor: 'pointer',
+                            fontSize: '12px',
+                            transition: 'all 0.2s ease',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            position: 'relative'
+                          }}
+                          onMouseEnter={(e) => {
+                            const hoverColor = selectedSlice !== null ? '#FF6B6B' : '#FF5722';
+                            e.currentTarget.style.backgroundColor = `rgba(${selectedSlice !== null ? '255, 107, 107' : '255, 87, 34'}, 0.2)`;
+                            e.currentTarget.style.borderColor = hoverColor;
+                            e.currentTarget.style.transform = 'translateX(4px)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 'rgba(255, 255, 255, 0.08)';
+                            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                            e.currentTarget.style.transform = 'translateX(0px)';
+                          }}
+                        >
+                          <div style={{ 
+                            display: 'flex', 
+                            alignItems: 'center', 
+                            marginBottom: '6px',
+                            fontWeight: 'bold',
+                            color: '#FFF'
+                          }}>
+                            <span style={{ 
+                              marginRight: '8px', 
+                              fontSize: '14px',
+                              color: '#F44336'
+                            }}>
+                              ❌
+                            </span>
+                            <span>{actionPair.prevAction.label_names[0]} → {actionPair.currentAction.label_names[0]}</span>
+                          </div>
+                          
+                          <div style={{ 
+                            fontSize: '11px',
+                            color: '#bbb',
+                            marginLeft: '22px',
+                            lineHeight: '1.3'
+                          }}>
+                            <div>前動作: {frameToTime(actionPair.prevAction.start_id)} - {frameToTime(actionPair.prevAction.end_id)}</div>
+                            <div>失误動作: {frameToTime(actionPair.currentAction.start_id)} - {frameToTime(actionPair.currentAction.end_id)}</div>
+                            <div style={{ color: '#888', marginTop: '2px' }}>
+                              間隔: {actionPair.currentAction.start_id - actionPair.prevAction.end_id}秒
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </>
+            )}
+            
+            <div style={{ 
+              marginTop: '12px', 
+              fontSize: '11px', 
+              color: '#888',
+              borderTop: '1px solid #444',
+              paddingTop: '8px',
+              textAlign: 'center',
+              fontStyle: 'italic'
+            }}>
+              {selectedSlice !== null ? (
+                <>
+                  💡 クリックして録画の該当時間に移動 | 
+                  <span style={{ color: '#FFB3B3' }}> クリックまたはEscで閉じる</span>
+                </>
+              ) : (
+                <>
+                  💡 クリックして録画の該当時間に移動 | 
+                  <span style={{ color: '#FF8A65' }}> 切片をクリックで固定表示</span>
+                </>
+              )}
             </div>
           </div>
         )}
