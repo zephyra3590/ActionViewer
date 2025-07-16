@@ -23,7 +23,7 @@ function App() {
   const [canDownloadJson, setCanDownloadJson] = useState(false);
 
   // Define version and build time
-  const VERSION = "1.3.0";
+  const VERSION = "1.3.1";
   const BUILD_TIME = new Date().toLocaleString();
   
   const setUploadStatus = (status) => {
