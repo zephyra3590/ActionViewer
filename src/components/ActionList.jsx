@@ -33,53 +33,50 @@ const ActionList = ({ gts, onActionClick, fps }) => {
   };
   
   // 修正的动作成功判断逻辑
-  const checkActionSuccess = (currentAction, currentPlayerIndex, allPlayers) => {
+  const checkActionSuccess = (currentAction, currentPlayerActions) => {
     const currentEndTime = currentAction.end_id;
     const twoSecondsLater = currentEndTime + 2;
     
-    // 获取对手的动作（另一个选手）
-    const opponentIndex = 1 - currentPlayerIndex; // 0变1，1变0
-    const opponentActions = allPlayers[opponentIndex]?.actions || [];
+    // 按时间排序当前选手的所有动作
+    const sortedActions = [...currentPlayerActions].sort((a, b) => a.start_id - b.start_id);
     
-    // 查找对手在2秒内的回应动作
-    const opponentResponse = opponentActions.find(action => 
-      action.start_id >= currentEndTime && action.start_id <= twoSecondsLater
+    // 找到当前动作在排序后数组中的索引
+    const currentIndex = sortedActions.findIndex(action => 
+      action.start_id === currentAction.start_id && 
+      action.end_id === currentAction.end_id &&
+      action.label_names[0] === currentAction.label_names[0]
     );
     
-    if (opponentResponse) {
-      // 对手在2秒内有回应，认为当前动作成功
-      return true;
-    }
-    
-    // 2秒内对手没有回应，查找2秒后对手的下一个动作
-    const opponentNextAction = opponentActions.find(action => 
-      action.start_id > twoSecondsLater
+    // 查找当前选手自己在2秒内的下一个动作
+    const nextActionWithin2Sec = sortedActions.find((action, index) => 
+      index > currentIndex && action.start_id <= twoSecondsLater
     );
     
-    if (opponentNextAction) {
-      // 检查对手的下一个动作是否是サーブ（发球）
-      const nextActionLabelId = Object.keys(actionLabels).find(key => 
-        actionLabels[key] === opponentNextAction.label_names[0]
-      );
-      return nextActionLabelId === "0"; // "0" 对应 "サーブ"，说明当前选手得分了
+    if (nextActionWithin2Sec) {
+      // 2秒内有下一个动作，认为成功
+      return 'success';
     }
     
-    // 查找当前选手自己的下一个动作
-    const currentPlayerActions = allPlayers[currentPlayerIndex]?.actions || [];
-    const currentPlayerNextAction = currentPlayerActions.find(action => 
-      action.start_id > currentEndTime
+    // 2秒内没有动作，查找2秒后的下一个动作
+    const nextActionAfter2Sec = sortedActions.find((action, index) => 
+      index > currentIndex && action.start_id > twoSecondsLater
     );
     
-    if (currentPlayerNextAction) {
-      // 检查自己的下一个动作是否是サーブ
-      const nextActionLabelId = Object.keys(actionLabels).find(key => 
-        actionLabels[key] === currentPlayerNextAction.label_names[0]
-      );
-      return nextActionLabelId === "0"; // 自己发球，说明上一个动作得分了
+    if (nextActionAfter2Sec) {
+      // 检查动作名称是否包含"サーブ"（广义的发球动作）
+      const actionName = nextActionAfter2Sec.label_names[0];
+      return actionName && actionName.includes("サーブ") ? 'success' : 'failure';
     }
     
-    // 没有后续动作，认为失败
-    return false;
+    // 没有后续动作，检查当前动作名称
+    const currentActionName = currentAction.label_names[0];
+    if (currentActionName && currentActionName.includes("誤")) {
+      // 动作名称包含"误"，判定为失误
+      return 'failure';
+    }
+    
+    // 没有后续动作且不包含"误"，不做判定
+    return 'no_judgment';
   };
   
   // 获取当前选中的选手的动作
@@ -117,13 +114,21 @@ const ActionList = ({ gts, onActionClick, fps }) => {
       <ul>
         {currentActions.map((action, index) => {
           // 判断动作是否成功
+          const result = checkActionSuccess(action, currentActions);
           let statusIcon;
-          if (gts && gts.length >= 2) {
-            const isSuccess = checkActionSuccess(action, activeTab, gts);
-            statusIcon = isSuccess ? "🟢" : "❌";
-          } else {
-            // 如果没有足够的选手数据，不做判断
-            statusIcon = "⭕";
+          
+          switch(result) {
+            case 'success':
+              statusIcon = "🟢";
+              break;
+            case 'failure':
+              statusIcon = "❌";
+              break;
+            case 'no_judgment':
+              statusIcon = "⭕";
+              break;
+            default:
+              statusIcon = "⭕";
           }
           
           return (
