@@ -3,6 +3,7 @@ import VideoPlayer from './components/VideoPlayer';
 import ActionList from './components/ActionList';
 import RadarChart from './components/RadarChart';
 import PieChart from './components/PieChart';
+import { analyzeAllPlayersActions } from './utils/ActionAnalyzer';
 import './App.css';
 
 function App() {
@@ -23,7 +24,7 @@ function App() {
   const [canDownloadJson, setCanDownloadJson] = useState(false);
   
   // Define version and build time
-  const VERSION = "1.3.1";
+  const VERSION = "1.3.2"; // 版本号更新，表示集成了ActionAnalyzer
   const BUILD_TIME = new Date().toLocaleString();
   
   const setUploadStatus = (status) => {
@@ -130,10 +131,19 @@ function App() {
   const processJsonData = (data, format) => {
     if (format === 'format1') {
       setFps(data.fps || 30);
-      // 合并两个选手的动作用于旧的组件（RadarChart 和 PieChart）
+      
+      // 使用ActionAnalyzer分析动作数据
+      const analyzedData = analyzeAllPlayersActions(data.gts);
+      
+      // 合并两个选手的原始动作用于旧的组件（RadarChart 和 PieChart）
       const allActions = [...data.gts[0].actions, ...data.gts[1].actions];
       setActions(allActions);
-      return data;
+      
+      // 返回包含分析结果的数据
+      return {
+        ...data,
+        gts: analyzedData
+      };
     } else if (format === 'format2') {
       // Transform action_results to match the expected format (without outer array)
       const transformedActions = data.action_results.map(action => ({
@@ -148,12 +158,20 @@ function App() {
       setActions(transformedActions);
       
       // Create a compatible data structure for the new format
-      return {
+      const compatibleData = {
         fps: 30,
         gts: [
           { actions: transformedActions },
           { actions: [] } // Empty actions for second player
         ]
+      };
+      
+      // 使用ActionAnalyzer分析动作数据
+      const analyzedData = analyzeAllPlayersActions(compatibleData.gts);
+      
+      return {
+        ...compatibleData,
+        gts: analyzedData
       };
     }
     return null;
@@ -172,7 +190,15 @@ function App() {
           if (format) {
             const processedData = processJsonData(data, format);
             setVideoData(processedData);
-            setUploadStatus(`JSON loaded: ${file.name} (${format})`);
+            setUploadStatus(`JSON loaded and analyzed: ${file.name} (${format})`);
+            
+            // 添加动作分析统计信息到状态日志
+            if (processedData && processedData.gts) {
+              processedData.gts.forEach((player, index) => {
+                const totalActions = player.actions ? player.actions.length : 0;
+                setUploadStatus(`Player ${index + 1}: ${totalActions} actions analyzed`);
+              });
+            }
           } else {
             alert('Invalid JSON format, please check the data structure');
             setUploadStatus(`Error: Invalid JSON format in ${file.name}`);
