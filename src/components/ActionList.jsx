@@ -32,32 +32,50 @@ const ActionList = ({ gts, onActionClick, fps }) => {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
   
-  // 检查动作是否成功（与 RadarChart 中相同的逻辑）
-  const checkActionSuccess = (currentAction, allActions, currentIndex) => {
+  // 修正的动作成功判断逻辑
+  const checkActionSuccess = (currentAction, currentPlayerIndex, allPlayers) => {
     const currentEndTime = currentAction.end_id;
     const twoSecondsLater = currentEndTime + 2;
     
-    // 查找2秒内的下一个动作
-    const nextActionWithin2Sec = allActions.find((action, index) => 
-      index > currentIndex && action.start_id <= twoSecondsLater
+    // 获取对手的动作（另一个选手）
+    const opponentIndex = 1 - currentPlayerIndex; // 0变1，1变0
+    const opponentActions = allPlayers[opponentIndex]?.actions || [];
+    
+    // 查找对手在2秒内的回应动作
+    const opponentResponse = opponentActions.find(action => 
+      action.start_id >= currentEndTime && action.start_id <= twoSecondsLater
     );
     
-    if (nextActionWithin2Sec) {
-      // 2秒内有下一个动作，认为成功
+    if (opponentResponse) {
+      // 对手在2秒内有回应，认为当前动作成功
       return true;
     }
     
-    // 2秒内没有动作，查找2秒后的下一个动作
-    const nextActionAfter2Sec = allActions.find((action, index) => 
-      index > currentIndex && action.start_id > twoSecondsLater
+    // 2秒内对手没有回应，查找2秒后对手的下一个动作
+    const opponentNextAction = opponentActions.find(action => 
+      action.start_id > twoSecondsLater
     );
     
-    if (nextActionAfter2Sec) {
-      // 检查是否是サーブ动作
+    if (opponentNextAction) {
+      // 检查对手的下一个动作是否是サーブ（发球）
       const nextActionLabelId = Object.keys(actionLabels).find(key => 
-        actionLabels[key] === nextActionAfter2Sec.label_names[0]
+        actionLabels[key] === opponentNextAction.label_names[0]
       );
-      return nextActionLabelId === "0"; // "0" 对应 "サーブ"
+      return nextActionLabelId === "0"; // "0" 对应 "サーブ"，说明当前选手得分了
+    }
+    
+    // 查找当前选手自己的下一个动作
+    const currentPlayerActions = allPlayers[currentPlayerIndex]?.actions || [];
+    const currentPlayerNextAction = currentPlayerActions.find(action => 
+      action.start_id > currentEndTime
+    );
+    
+    if (currentPlayerNextAction) {
+      // 检查自己的下一个动作是否是サーブ
+      const nextActionLabelId = Object.keys(actionLabels).find(key => 
+        actionLabels[key] === currentPlayerNextAction.label_names[0]
+      );
+      return nextActionLabelId === "0"; // 自己发球，说明上一个动作得分了
     }
     
     // 没有后续动作，认为失败
@@ -70,9 +88,8 @@ const ActionList = ({ gts, onActionClick, fps }) => {
     return gts[activeTab].actions || [];
   };
   
-  // 准备排序后的动作数据，用于成功率判断
+  // 准备当前选手的动作数据
   const currentActions = getCurrentPlayerActions();
-  const sortedActions = [...currentActions].sort((a, b) => a.start_id - b.start_id);
   
   return (
     <div className="action-list">
@@ -99,23 +116,14 @@ const ActionList = ({ gts, onActionClick, fps }) => {
       {/* 动作列表 */}
       <ul>
         {currentActions.map((action, index) => {
-          // 找到当前动作在排序后数组中的索引
-          const sortedIndex = sortedActions.findIndex(sortedAction => 
-            sortedAction.start_id === action.start_id && 
-            sortedAction.end_id === action.end_id &&
-            sortedAction.label_names[0] === action.label_names[0]
-          );
-          
-          // 检查是否是最后一个动作
-          const isLastAction = sortedIndex === sortedActions.length - 1;
-          
-          // 判断动作是否成功（最后一个动作不做判断）
+          // 判断动作是否成功
           let statusIcon;
-          if (isLastAction) {
-            statusIcon = "⭕"; // 或者使用其他图标表示"不做判断"
-          } else {
-            const isSuccess = checkActionSuccess(action, sortedActions, sortedIndex);
+          if (gts && gts.length >= 2) {
+            const isSuccess = checkActionSuccess(action, activeTab, gts);
             statusIcon = isSuccess ? "🟢" : "❌";
+          } else {
+            // 如果没有足够的选手数据，不做判断
+            statusIcon = "⭕";
           }
           
           return (
