@@ -21,7 +21,7 @@ function App() {
   const [processedFileName, setProcessedFileName] = useState('');
   const [predictionCompleted, setPredictionCompleted] = useState(false);
   const [canDownloadJson, setCanDownloadJson] = useState(false);
-
+  
   // Define version and build time
   const VERSION = "1.3.1";
   const BUILD_TIME = new Date().toLocaleString();
@@ -91,7 +91,7 @@ function App() {
       if (statusTimer) clearInterval(statusTimer);
     };
   }, [extractionInProgress, processedFileName]);
-
+  
   const handleVideoUpload = (event) => {
     const file = event.target.files[0];
     if (file && file.type.startsWith('video/')) {
@@ -106,14 +106,20 @@ function App() {
   };
   
   const validateJsonData = (data) => {
-    // First format: { fps, gts: [{ actions: [...] }] }
+    // New format: { fps, gts: [{ actions: [...] }, { actions: [...] }] }
     if (data.fps && data.gts && Array.isArray(data.gts)) {
-      if (data.gts.length > 0 && data.gts[0].actions && Array.isArray(data.gts[0].actions)) {
-        return 'format1';
+      if (data.gts.length >= 2) {
+        // Check if both players have actions
+        const hasValidActions = data.gts.every(player => 
+          player.actions && Array.isArray(player.actions)
+        );
+        if (hasValidActions) {
+          return 'format1';
+        }
       }
     }
     
-    // Second format: { action_results: [...] } (without outer array)
+    // Old format: { action_results: [...] } (without outer array)
     if (data.action_results && Array.isArray(data.action_results)) {
       return 'format2';
     }
@@ -124,7 +130,9 @@ function App() {
   const processJsonData = (data, format) => {
     if (format === 'format1') {
       setFps(data.fps || 30);
-      setActions(data.gts[0].actions);
+      // 合并两个选手的动作用于旧的组件（RadarChart 和 PieChart）
+      const allActions = [...data.gts[0].actions, ...data.gts[1].actions];
+      setActions(allActions);
       return data;
     } else if (format === 'format2') {
       // Transform action_results to match the expected format (without outer array)
@@ -139,12 +147,13 @@ function App() {
       setFps(30); // Default fps if not provided
       setActions(transformedActions);
       
-      // Create a compatible data structure
+      // Create a compatible data structure for the new format
       return {
         fps: 30,
-        gts: [{
-          actions: transformedActions
-        }]
+        gts: [
+          { actions: transformedActions },
+          { actions: [] } // Empty actions for second player
+        ]
       };
     }
     return null;
@@ -314,10 +323,10 @@ function App() {
                 fps={fps} 
               />
             </div>
-            {actions.length > 0 ? (
+            {videoData && videoData.gts ? (
               <div className="sidebar">
                 <ActionList 
-                  actions={actions} 
+                  gts={videoData.gts}
                   onActionClick={handleActionClick} 
                   fps={fps}
                 />
@@ -342,7 +351,7 @@ function App() {
           </div>
         )}
         
-        {/* 雷达图显示区域 - 添加了 onActionClick 属性 */}
+        {/* 雷达图显示区域 - 继续使用合并后的actions */}
         {actions.length > 0 && (
           <RadarChart 
             actions={actions} 
@@ -350,7 +359,7 @@ function App() {
           />
         )}
         
-        {/* 饼图显示区域 - 添加 onActionClick 属性 */}
+        {/* 饼图显示区域 - 继续使用合并后的actions */}
         {actions.length > 0 && (
           <PieChart 
             actions={actions} 
