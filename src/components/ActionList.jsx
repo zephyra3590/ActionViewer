@@ -1,6 +1,10 @@
+import React, { useState } from 'react';
 import './ActionList.css';
 
-const ActionList = ({ actions, onActionClick, fps }) => {
+const ActionList = ({ gts, onActionClick, fps }) => {
+  // 添加状态管理当前选中的Tab
+  const [activeTab, setActiveTab] = useState(0);
+  
   // 动作类型映射（与 RadarChart 中相同）
   const actionLabels = {
     "0": "サーブ",
@@ -15,7 +19,7 @@ const ActionList = ({ actions, onActionClick, fps }) => {
     "9": "クリアー",
     "10": "ディフェンス"
   };
-
+  
   const handleClick = (startFrame) => {
     onActionClick(startFrame);
   };
@@ -27,7 +31,7 @@ const ActionList = ({ actions, onActionClick, fps }) => {
     const seconds = totalSeconds % 60;
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
-
+  
   // 检查动作是否成功（与 RadarChart 中相同的逻辑）
   const checkActionSuccess = (currentAction, allActions, currentIndex) => {
     const currentEndTime = currentAction.end_id;
@@ -59,15 +63,42 @@ const ActionList = ({ actions, onActionClick, fps }) => {
     // 没有后续动作，认为失败
     return false;
   };
-
+  
+  // 获取当前选中的选手的动作
+  const getCurrentPlayerActions = () => {
+    if (!gts || !gts[activeTab]) return [];
+    return gts[activeTab].actions || [];
+  };
+  
   // 准备排序后的动作数据，用于成功率判断
-  const sortedActions = [...actions].sort((a, b) => a.start_id - b.start_id);
+  const currentActions = getCurrentPlayerActions();
+  const sortedActions = [...currentActions].sort((a, b) => a.start_id - b.start_id);
   
   return (
     <div className="action-list">
       <h2>Action List</h2>
+      
+      {/* Tab切换区域 */}
+      <div className="tab-container">
+        <div className="tabs">
+          <button 
+            className={`tab ${activeTab === 0 ? 'active' : ''}`}
+            onClick={() => setActiveTab(0)}
+          >
+            近处选手
+          </button>
+          <button 
+            className={`tab ${activeTab === 1 ? 'active' : ''}`}
+            onClick={() => setActiveTab(1)}
+          >
+            远处选手
+          </button>
+        </div>
+      </div>
+      
+      {/* 动作列表 */}
       <ul>
-        {actions.map((action, index) => {
+        {currentActions.map((action, index) => {
           // 找到当前动作在排序后数组中的索引
           const sortedIndex = sortedActions.findIndex(sortedAction => 
             sortedAction.start_id === action.start_id && 
