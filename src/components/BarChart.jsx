@@ -310,84 +310,84 @@ const BarChart = ({ gts }) => {
   // 创建图表数据
   const chartData = [
     {
-      label: '全体成功率',
+      label: '全体',
       player1Value: player1SuccessRate,
       player2Value: player2SuccessRate,
       maxValue: 100,
       showPercentage: true
     },
     {
-      label: 'サーブ成功率',
+      label: 'サーブ',
       player1Value: player1ServeStats.rate,
       player2Value: player2ServeStats.rate,
       maxValue: 100,
       showPercentage: true
     },
     {
-      label: 'ロブ成功率',
+      label: 'ロブ',
       player1Value: player1LobStats.rate,
       player2Value: player2LobStats.rate,
       maxValue: 100,
       showPercentage: true
     },
     {
-      label: 'ネット/ヘアピン成功率',
+      label: 'ネット/ヘアピン',
       player1Value: player1NetHairpinStats.rate,
       player2Value: player2NetHairpinStats.rate,
       maxValue: 100,
       showPercentage: true
     },
     {
-      label: 'プッシュ成功率',
+      label: 'プッシュ',
       player1Value: player1PushStats.rate,
       player2Value: player2PushStats.rate,
       maxValue: 100,
       showPercentage: true
     },
     {
-      label: 'ドライブ成功率',
+      label: 'ドライブ',
       player1Value: player1DriveStats.rate,
       player2Value: player2DriveStats.rate,
       maxValue: 100,
       showPercentage: true
     },
     {
-      label: 'スマッシュレシーブ成功率',
+      label: 'スマッシュレシーブ',
       player1Value: player1SmashReceiveStats.rate,
       player2Value: player2SmashReceiveStats.rate,
       maxValue: 100,
       showPercentage: true
     },
     {
-      label: 'クリアー成功率',
+      label: 'クリアー',
       player1Value: player1ClearStats.rate,
       player2Value: player2ClearStats.rate,
       maxValue: 100,
       showPercentage: true
     },
     {
-      label: 'スマッシュ成功率',
+      label: 'スマッシュ',
       player1Value: player1SmashStats.rate,
       player2Value: player2SmashStats.rate,
       maxValue: 100,
       showPercentage: true
     },
     {
-      label: 'ドロップ/カット成功率',
+      label: 'ドロップ/カット',
       player1Value: player1DropCutStats.rate,
       player2Value: player2DropCutStats.rate,
       maxValue: 100,
       showPercentage: true
     },
     {
-      label: 'ディフェンス成功率',
+      label: 'ディフェンス',
       player1Value: player1DefenseStats.rate,
       player2Value: player2DefenseStats.rate,
       maxValue: 100,
       showPercentage: true
     },
     {
-      label: 'ジャッジ成功率',
+      label: 'ジャッジ',
       player1Value: player1JudgeStats.rate,
       player2Value: player2JudgeStats.rate,
       maxValue: 100,
@@ -397,7 +397,7 @@ const BarChart = ({ gts }) => {
   
   return (
     <div className="bar-chart">
-      <h2>選手データ比較</h2>
+      <h2>選手データ比較 (成功率)</h2>
       
       {/* 选手头部信息 */}
       <div className="chart-header">
