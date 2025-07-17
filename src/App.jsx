@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import VideoPlayer from './components/VideoPlayer';
 import ActionList from './components/ActionList';
+import BarChart from './components/BarChart';
 import { analyzeAllPlayersActions } from './utils/ActionAnalyzer';
 import './App.css';
 
@@ -21,7 +22,7 @@ function App() {
   const [canDownloadJson, setCanDownloadJson] = useState(false);
   
   // Define version and build time
-  const VERSION = "1.3.3"; // 版本号更新，表示删除了雷达图和饼图
+  const VERSION = "1.4.0"; // 版本号更新，添加了条形图
   const BUILD_TIME = new Date().toLocaleString();
   
   const setUploadStatus = (status) => {
@@ -363,6 +364,12 @@ function App() {
             </div>
           </div>
         )}
+        
+        {/* 添加条形图组件 */}
+        {videoData && videoData.gts && (
+          <BarChart gts={videoData.gts} />
+        )}
+        
         {!videoUrl && (
           <div className="instructions">
             <p>Please upload a video file and JSON file to start</p>
