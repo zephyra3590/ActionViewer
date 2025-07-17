@@ -349,26 +349,26 @@ function App() {
                 fps={fps} 
               />
             </div>
-            {videoData && videoData.gts ? (
-              <div className="sidebar">
+            <div className="sidebar">
+              {videoData && videoData.gts ? (
                 <ActionList 
                   gts={videoData.gts}
                   onActionClick={handleActionClick} 
                   fps={fps}
                 />
-              </div>
-            ) : (
-              <div className="sidebar status-display">
-                <h2>Status Log</h2>
-                <div className="status-content">
-                  {uploadStatusLog.map((status, index) => (
-                    <p key={index} className={`status-line ${status.includes('Error') ? 'error' : status.includes('✓') ? 'success' : ''}`}>
-                      {status}
-                    </p>
-                  ))}
+              ) : (
+                <div className="status-display">
+                  <h2>Status Log</h2>
+                  <div className="status-content">
+                    {uploadStatusLog.map((status, index) => (
+                      <p key={index} className={`status-line ${status.includes('Error') ? 'error' : status.includes('✓') ? 'success' : ''}`}>
+                        {status}
+                      </p>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         )}
         {!videoUrl && (
