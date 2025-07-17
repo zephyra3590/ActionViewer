@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react';
 import VideoPlayer from './components/VideoPlayer';
 import ActionList from './components/ActionList';
-import RadarChart from './components/RadarChart';
-import PieChart from './components/PieChart';
 import { analyzeAllPlayersActions } from './utils/ActionAnalyzer';
 import './App.css';
 
@@ -13,7 +11,6 @@ function App() {
   const [videoData, setVideoData] = useState(null);
   const [videoFileName, setVideoFileName] = useState('');
   const [jsonFileName, setJsonFileName] = useState('');
-  const [actions, setActions] = useState([]);
   const [fps, setFps] = useState(30);
   const [uploadStatusLog, setUploadStatusLog] = useState([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -24,7 +21,7 @@ function App() {
   const [canDownloadJson, setCanDownloadJson] = useState(false);
   
   // Define version and build time
-  const VERSION = "1.3.2"; // 版本号更新，表示集成了ActionAnalyzer
+  const VERSION = "1.3.3"; // 版本号更新，表示删除了雷达图和饼图
   const BUILD_TIME = new Date().toLocaleString();
   
   const setUploadStatus = (status) => {
@@ -135,10 +132,6 @@ function App() {
       // 使用ActionAnalyzer分析动作数据
       const analyzedData = analyzeAllPlayersActions(data.gts);
       
-      // 合并两个选手的原始动作用于旧的组件（RadarChart 和 PieChart）
-      const allActions = [...data.gts[0].actions, ...data.gts[1].actions];
-      setActions(allActions);
-      
       // 返回包含分析结果的数据
       return {
         ...data,
@@ -155,7 +148,6 @@ function App() {
       }));
       
       setFps(30); // Default fps if not provided
-      setActions(transformedActions);
       
       // Create a compatible data structure for the new format
       const compatibleData = {
@@ -375,22 +367,6 @@ function App() {
           <div className="instructions">
             <p>Please upload a video file and JSON file to start</p>
           </div>
-        )}
-        
-        {/* 雷达图显示区域 - 继续使用合并后的actions */}
-        {actions.length > 0 && (
-          <RadarChart 
-            actions={actions} 
-            onActionClick={handleActionClick} 
-          />
-        )}
-        
-        {/* 饼图显示区域 - 继续使用合并后的actions */}
-        {actions.length > 0 && (
-          <PieChart 
-            actions={actions} 
-            onActionClick={handleActionClick} 
-          />
         )}
       </main>
       <footer className="app-footer">
