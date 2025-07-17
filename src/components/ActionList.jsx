@@ -45,13 +45,13 @@ const ActionList = ({ gts, onActionClick, fps }) => {
             className={`tab ${activeTab === 0 ? 'active' : ''}`}
             onClick={() => setActiveTab(0)}
           >
-            近处选手
+            手前の選手
           </button>
           <button 
             className={`tab ${activeTab === 1 ? 'active' : ''}`}
             onClick={() => setActiveTab(1)}
           >
-            远处选手
+            奥の選手
           </button>
         </div>
       </div>
