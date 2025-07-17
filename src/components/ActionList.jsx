@@ -14,6 +14,17 @@ const ActionList = ({ gts, onActionClick, fps }) => {
     onActionClick(startFrame);
   };
   
+  // 新增：直接格式化秒数为时间显示的函数
+  const formatSecondsToTime = (seconds) => {
+    if (!seconds || seconds < 0) return "0:00";
+    
+    const totalSeconds = Math.floor(seconds);
+    const minutes = Math.floor(totalSeconds / 60);
+    const remainingSeconds = totalSeconds % 60;
+    
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
+  };
+  
   // 获取当前选中的选手的动作
   const getCurrentPlayerActions = () => {
     if (!gts || !gts[activeTab]) return [];
@@ -62,7 +73,7 @@ const ActionList = ({ gts, onActionClick, fps }) => {
                 {statusIcon} {action.label_names && action.label_names[0]}
               </span>
               <span className="action-time">
-                {formatFrameToTime(action.start_id, fps)} - {formatFrameToTime(action.end_id, fps)}
+                {formatSecondsToTime(action.start_id)} - {formatSecondsToTime(action.end_id)}
               </span>
             </li>
           );
