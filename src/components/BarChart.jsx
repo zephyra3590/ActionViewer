@@ -25,33 +25,233 @@ const BarChart = ({ gts }) => {
     };
   };
   
-  // 计算得分（成功的动作数）
-  const calculateScore = (actions) => {
-    if (!actions || actions.length === 0) return 0;
+  // 计算ロブ成功率
+  const calculateLobStats = (actions) => {
+    if (!actions || actions.length === 0) return { total: 0, success: 0, rate: 0 };
     
-    return actions.filter(action => 
+    const lobActions = actions.filter(action => 
+      action.label_names && action.label_names[0] && 
+      action.label_names[0].includes('ロブ')
+    );
+    
+    if (lobActions.length === 0) return { total: 0, success: 0, rate: 0 };
+    
+    const successfulLobs = lobActions.filter(action => 
       analyzeActionSuccess(action, actions) === 'success'
-    ).length;
-  };
-  
-  // 计算失误（失败的动作数）
-  const calculateErrors = (actions) => {
-    if (!actions || actions.length === 0) return 0;
+    );
     
-    return actions.filter(action => 
-      analyzeActionSuccess(action, actions) === 'fail'
-    ).length;
+    return {
+      total: lobActions.length,
+      success: successfulLobs.length,
+      rate: Math.round((successfulLobs.length / lobActions.length) * 100)
+    };
   };
   
-  // 计算总动作数
-  const calculateTotalActions = (actions) => {
-    return actions ? actions.length : 0;
+  // 计算ネット/ヘアピン成功率
+  const calculateNetHairpinStats = (actions) => {
+    if (!actions || actions.length === 0) return { total: 0, success: 0, rate: 0 };
+    
+    const netHairpinActions = actions.filter(action => 
+      action.label_names && action.label_names[0] && 
+      (action.label_names[0].includes('ネット') || action.label_names[0].includes('ヘアピン'))
+    );
+    
+    if (netHairpinActions.length === 0) return { total: 0, success: 0, rate: 0 };
+    
+    const successfulNetHairpins = netHairpinActions.filter(action => 
+      analyzeActionSuccess(action, actions) === 'success'
+    );
+    
+    return {
+      total: netHairpinActions.length,
+      success: successfulNetHairpins.length,
+      rate: Math.round((successfulNetHairpins.length / netHairpinActions.length) * 100)
+    };
+  };
+  
+  // 计算プッシュ成功率
+  const calculatePushStats = (actions) => {
+    if (!actions || actions.length === 0) return { total: 0, success: 0, rate: 0 };
+    
+    const pushActions = actions.filter(action => 
+      action.label_names && action.label_names[0] && 
+      action.label_names[0].includes('プッシュ')
+    );
+    
+    if (pushActions.length === 0) return { total: 0, success: 0, rate: 0 };
+    
+    const successfulPushs = pushActions.filter(action => 
+      analyzeActionSuccess(action, actions) === 'success'
+    );
+    
+    return {
+      total: pushActions.length,
+      success: successfulPushs.length,
+      rate: Math.round((successfulPushs.length / pushActions.length) * 100)
+    };
+  };
+  
+  // 计算ドライブ成功率
+  const calculateDriveStats = (actions) => {
+    if (!actions || actions.length === 0) return { total: 0, success: 0, rate: 0 };
+    
+    const driveActions = actions.filter(action => 
+      action.label_names && action.label_names[0] && 
+      action.label_names[0].includes('ドライブ')
+    );
+    
+    if (driveActions.length === 0) return { total: 0, success: 0, rate: 0 };
+    
+    const successfulDrives = driveActions.filter(action => 
+      analyzeActionSuccess(action, actions) === 'success'
+    );
+    
+    return {
+      total: driveActions.length,
+      success: successfulDrives.length,
+      rate: Math.round((successfulDrives.length / driveActions.length) * 100)
+    };
+  };
+  
+  // 计算スマッシュレシーブ成功率
+  const calculateSmashReceiveStats = (actions) => {
+    if (!actions || actions.length === 0) return { total: 0, success: 0, rate: 0 };
+    
+    const smashReceiveActions = actions.filter(action => 
+      action.label_names && action.label_names[0] && 
+      action.label_names[0].includes('スマッシュレシーブ')
+    );
+    
+    if (smashReceiveActions.length === 0) return { total: 0, success: 0, rate: 0 };
+    
+    const successfulSmashReceives = smashReceiveActions.filter(action => 
+      analyzeActionSuccess(action, actions) === 'success'
+    );
+    
+    return {
+      total: smashReceiveActions.length,
+      success: successfulSmashReceives.length,
+      rate: Math.round((successfulSmashReceives.length / smashReceiveActions.length) * 100)
+    };
+  };
+  
+  // 计算クリアー成功率
+  const calculateClearStats = (actions) => {
+    if (!actions || actions.length === 0) return { total: 0, success: 0, rate: 0 };
+    
+    const clearActions = actions.filter(action => 
+      action.label_names && action.label_names[0] && 
+      action.label_names[0].includes('クリアー')
+    );
+    
+    if (clearActions.length === 0) return { total: 0, success: 0, rate: 0 };
+    
+    const successfulClears = clearActions.filter(action => 
+      analyzeActionSuccess(action, actions) === 'success'
+    );
+    
+    return {
+      total: clearActions.length,
+      success: successfulClears.length,
+      rate: Math.round((successfulClears.length / clearActions.length) * 100)
+    };
+  };
+  
+  // 计算スマッシュ成功率
+  const calculateSmashStats = (actions) => {
+    if (!actions || actions.length === 0) return { total: 0, success: 0, rate: 0 };
+    
+    const smashActions = actions.filter(action => 
+      action.label_names && action.label_names[0] && 
+      action.label_names[0].includes('スマッシュ') &&
+      !action.label_names[0].includes('スマッシュレシーブ') // 排除スマッシュレシーブ
+    );
+    
+    if (smashActions.length === 0) return { total: 0, success: 0, rate: 0 };
+    
+    const successfulSmashs = smashActions.filter(action => 
+      analyzeActionSuccess(action, actions) === 'success'
+    );
+    
+    return {
+      total: smashActions.length,
+      success: successfulSmashs.length,
+      rate: Math.round((successfulSmashs.length / smashActions.length) * 100)
+    };
+  };
+  
+  // 计算ドロップ/カット成功率
+  const calculateDropCutStats = (actions) => {
+    if (!actions || actions.length === 0) return { total: 0, success: 0, rate: 0 };
+    
+    const dropCutActions = actions.filter(action => 
+      action.label_names && action.label_names[0] && 
+      (action.label_names[0].includes('ドロップ') || action.label_names[0].includes('カット'))
+    );
+    
+    if (dropCutActions.length === 0) return { total: 0, success: 0, rate: 0 };
+    
+    const successfulDropCuts = dropCutActions.filter(action => 
+      analyzeActionSuccess(action, actions) === 'success'
+    );
+    
+    return {
+      total: dropCutActions.length,
+      success: successfulDropCuts.length,
+      rate: Math.round((successfulDropCuts.length / dropCutActions.length) * 100)
+    };
+  };
+  
+  // 计算ディフェンス成功率
+  const calculateDefenseStats = (actions) => {
+    if (!actions || actions.length === 0) return { total: 0, success: 0, rate: 0 };
+    
+    const defenseActions = actions.filter(action => 
+      action.label_names && action.label_names[0] && 
+      action.label_names[0].includes('ディフェンス')
+    );
+    
+    if (defenseActions.length === 0) return { total: 0, success: 0, rate: 0 };
+    
+    const successfulDefenses = defenseActions.filter(action => 
+      analyzeActionSuccess(action, actions) === 'success'
+    );
+    
+    return {
+      total: defenseActions.length,
+      success: successfulDefenses.length,
+      rate: Math.round((successfulDefenses.length / defenseActions.length) * 100)
+    };
+  };
+  
+  // 计算ジャッジ成功率
+  const calculateJudgeStats = (actions) => {
+    if (!actions || actions.length === 0) return { total: 0, success: 0, rate: 0 };
+    
+    const judgeActions = actions.filter(action => 
+      action.label_names && action.label_names[0] && 
+      action.label_names[0].includes('ジャッジ')
+    );
+    
+    if (judgeActions.length === 0) return { total: 0, success: 0, rate: 0 };
+    
+    const successfulJudges = judgeActions.filter(action => 
+      analyzeActionSuccess(action, actions) === 'success'
+    );
+    
+    return {
+      total: judgeActions.length,
+      success: successfulJudges.length,
+      rate: Math.round((successfulJudges.length / judgeActions.length) * 100)
+    };
   };
   
   // 计算成功率百分比
   const calculateSuccessRate = (actions) => {
     if (!actions || actions.length === 0) return 0;
-    const successCount = calculateScore(actions);
+    const successCount = actions.filter(action => 
+      analyzeActionSuccess(action, actions) === 'success'
+    ).length;
     return Math.round((successCount / actions.length) * 100);
   };
   
@@ -74,27 +274,41 @@ const BarChart = ({ gts }) => {
   const player1ServeStats = calculateServeStats(player1Actions);
   const player2ServeStats = calculateServeStats(player2Actions);
   
-  const player1Score = calculateScore(player1Actions);
-  const player2Score = calculateScore(player2Actions);
+  const player1LobStats = calculateLobStats(player1Actions);
+  const player2LobStats = calculateLobStats(player2Actions);
   
-  const player1Errors = calculateErrors(player1Actions);
-  const player2Errors = calculateErrors(player2Actions);
+  const player1NetHairpinStats = calculateNetHairpinStats(player1Actions);
+  const player2NetHairpinStats = calculateNetHairpinStats(player2Actions);
   
-  const player1TotalActions = calculateTotalActions(player1Actions);
-  const player2TotalActions = calculateTotalActions(player2Actions);
+  const player1PushStats = calculatePushStats(player1Actions);
+  const player2PushStats = calculatePushStats(player2Actions);
+  
+  const player1DriveStats = calculateDriveStats(player1Actions);
+  const player2DriveStats = calculateDriveStats(player2Actions);
+  
+  const player1SmashReceiveStats = calculateSmashReceiveStats(player1Actions);
+  const player2SmashReceiveStats = calculateSmashReceiveStats(player2Actions);
+  
+  const player1ClearStats = calculateClearStats(player1Actions);
+  const player2ClearStats = calculateClearStats(player2Actions);
+  
+  const player1SmashStats = calculateSmashStats(player1Actions);
+  const player2SmashStats = calculateSmashStats(player2Actions);
+  
+  const player1DropCutStats = calculateDropCutStats(player1Actions);
+  const player2DropCutStats = calculateDropCutStats(player2Actions);
+  
+  const player1DefenseStats = calculateDefenseStats(player1Actions);
+  const player2DefenseStats = calculateDefenseStats(player2Actions);
+  
+  const player1JudgeStats = calculateJudgeStats(player1Actions);
+  const player2JudgeStats = calculateJudgeStats(player2Actions);
   
   const player1SuccessRate = calculateSuccessRate(player1Actions);
   const player2SuccessRate = calculateSuccessRate(player2Actions);
   
   // 创建图表数据
   const chartData = [
-    {
-      label: 'サーブ成功率',
-      player1Value: player1ServeStats.rate,
-      player2Value: player2ServeStats.rate,
-      maxValue: 100,
-      showPercentage: true
-    },
     {
       label: '全体成功率',
       player1Value: player1SuccessRate,
@@ -103,25 +317,81 @@ const BarChart = ({ gts }) => {
       showPercentage: true
     },
     {
-      label: '成功動作数',
-      player1Value: player1Score,
-      player2Value: player2Score,
-      maxValue: Math.max(player1Score, player2Score, 1),
-      showPercentage: false
+      label: 'サーブ成功率',
+      player1Value: player1ServeStats.rate,
+      player2Value: player2ServeStats.rate,
+      maxValue: 100,
+      showPercentage: true
     },
     {
-      label: '失敗動作数',
-      player1Value: player1Errors,
-      player2Value: player2Errors,
-      maxValue: Math.max(player1Errors, player2Errors, 1),
-      showPercentage: false
+      label: 'ロブ成功率',
+      player1Value: player1LobStats.rate,
+      player2Value: player2LobStats.rate,
+      maxValue: 100,
+      showPercentage: true
     },
     {
-      label: '総動作数',
-      player1Value: player1TotalActions,
-      player2Value: player2TotalActions,
-      maxValue: Math.max(player1TotalActions, player2TotalActions, 1),
-      showPercentage: false
+      label: 'ネット/ヘアピン成功率',
+      player1Value: player1NetHairpinStats.rate,
+      player2Value: player2NetHairpinStats.rate,
+      maxValue: 100,
+      showPercentage: true
+    },
+    {
+      label: 'プッシュ成功率',
+      player1Value: player1PushStats.rate,
+      player2Value: player2PushStats.rate,
+      maxValue: 100,
+      showPercentage: true
+    },
+    {
+      label: 'ドライブ成功率',
+      player1Value: player1DriveStats.rate,
+      player2Value: player2DriveStats.rate,
+      maxValue: 100,
+      showPercentage: true
+    },
+    {
+      label: 'スマッシュレシーブ成功率',
+      player1Value: player1SmashReceiveStats.rate,
+      player2Value: player2SmashReceiveStats.rate,
+      maxValue: 100,
+      showPercentage: true
+    },
+    {
+      label: 'クリアー成功率',
+      player1Value: player1ClearStats.rate,
+      player2Value: player2ClearStats.rate,
+      maxValue: 100,
+      showPercentage: true
+    },
+    {
+      label: 'スマッシュ成功率',
+      player1Value: player1SmashStats.rate,
+      player2Value: player2SmashStats.rate,
+      maxValue: 100,
+      showPercentage: true
+    },
+    {
+      label: 'ドロップ/カット成功率',
+      player1Value: player1DropCutStats.rate,
+      player2Value: player2DropCutStats.rate,
+      maxValue: 100,
+      showPercentage: true
+    },
+    {
+      label: 'ディフェンス成功率',
+      player1Value: player1DefenseStats.rate,
+      player2Value: player2DefenseStats.rate,
+      maxValue: 100,
+      showPercentage: true
+    },
+    {
+      label: 'ジャッジ成功率',
+      player1Value: player1JudgeStats.rate,
+      player2Value: player2JudgeStats.rate,
+      maxValue: 100,
+      showPercentage: true
     }
   ];
   
