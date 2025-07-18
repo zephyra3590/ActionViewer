@@ -185,9 +185,9 @@ const PieChart = ({ gts, onActionClick, fps }) => {
     }
     
     const colors = generateColors(data.length);
-    const centerX = 160;
-    const centerY = 160;
-    const radius = 120;
+    const centerX = 213; // 320 * 2/3 ≈ 213
+    const centerY = 213; // 320 * 2/3 ≈ 213
+    const radius = 160;  // 240 * 2/3 = 160
     
     let currentAngle = 0;
     
@@ -217,6 +217,19 @@ const PieChart = ({ gts, onActionClick, fps }) => {
         isHovered: true,
         position: { x: mouseX, y: mouseY }
       });
+    };
+
+    const handleMouseMove = (item, event) => {
+      // 只有在悬停状态下才更新位置
+      if (actionPanel.isHovered && actionPanel.visible) {
+        const mouseX = event.clientX;
+        const mouseY = event.clientY;
+        
+        setActionPanel(prev => ({
+          ...prev,
+          position: { x: mouseX, y: mouseY }
+        }));
+      }
     };
     
     const handleMouseLeave = () => {
@@ -262,7 +275,7 @@ const PieChart = ({ gts, onActionClick, fps }) => {
         <h3>{title}</h3>
         <div className="pie-chart-content">
           <div className="pie-chart-wrapper">
-            <svg width="320" height="320" className="pie-chart-svg">
+            <svg width="427" height="427" className="pie-chart-svg">
               {data.map((item, index) => {
                 const sliceAngle = (item.percentage / 100) * 360;
                 const startAngle = currentAngle;
@@ -284,6 +297,7 @@ const PieChart = ({ gts, onActionClick, fps }) => {
                     strokeWidth="3"
                     className="pie-slice"
                     onMouseEnter={(e) => handleMouseEnter(item, e)}
+                    onMouseMove={(e) => handleMouseMove(item, e)}
                     onMouseLeave={handleMouseLeave}
                     onClick={(e) => handleSliceClick(item, e)}
                   />
