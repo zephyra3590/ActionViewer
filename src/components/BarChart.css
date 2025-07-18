@@ -79,7 +79,7 @@
   position: relative;
   border-radius: 14px;
   overflow: hidden;
-  background-color: #ecf0f1;
+  background-color: transparent;
 }
 
 .chart-left {
@@ -88,6 +88,9 @@
   justify-content: flex-end;
   align-items: center;
   background-color: transparent;
+  /* 左边外边距和右边内边距，让柱往中间靠拢但不完全接触 */
+  padding-left: 12%;
+  padding-right: 3%;
 }
 
 .chart-right {
@@ -96,6 +99,9 @@
   justify-content: flex-start;
   align-items: center;
   background-color: transparent;
+  /* 右边外边距和左边内边距，让柱往中间靠拢但不完全接触 */
+  padding-right: 12%;
+  padding-left: 3%;
 }
 
 .bar-left {
@@ -228,6 +234,16 @@
     border-radius: 8px;
   }
   
+  .chart-left {
+    padding-left: 8%;
+    padding-right: 3%;
+  }
+  
+  .chart-right {
+    padding-right: 8%;
+    padding-left: 3%;
+  }
+  
   .bar-left {
     font-size: 11px;
     padding-left: 8px;
@@ -274,6 +290,14 @@
   .chart-container {
     height: 20px;
     border-radius: 10px;
+  }
+  
+  .chart-left {
+    padding-right: 16.67%;
+  }
+  
+  .chart-right {
+    padding-left: 16.67%;
   }
   
   .bar-left {
