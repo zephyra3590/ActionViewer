@@ -8,11 +8,24 @@
 
 .pie-charts h2 {
   margin-top: 0;
-  margin-bottom: 30px;
+  margin-bottom: 15px;
   color: #2c3e50;
   text-align: center;
   font-size: 24px;
   font-weight: 600;
+}
+
+.usage-instructions {
+  text-align: center;
+  color: #6c757d;
+  font-size: 14px;
+  margin-bottom: 30px;
+  padding: 12px 20px;
+  background-color: #e8f4f8;
+  border-radius: 8px;
+  border-left: 4px solid #17a2b8;
+  font-weight: 500;
+  line-height: 1.4;
 }
 
 .charts-container {
@@ -113,6 +126,19 @@
   z-index: 1001;
   animation: panelFadeIn 0.3s ease-out;
   overflow: hidden;
+}
+
+/* 鼠标悬停时跟随鼠标的面板 */
+.action-panel-hover {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  border: 1px solid #ddd;
+  width: 320px;
+  max-height: 400px;
+  animation: panelFadeIn 0.2s ease-out;
+  overflow: hidden;
+  pointer-events: none; /* 防止鼠标事件干扰 */
 }
 
 .action-panel-header {
@@ -262,8 +288,6 @@
   }
 }
 
-
-
 .total-wins {
   margin-top: 10px;
   padding: 12px 20px;
@@ -346,7 +370,13 @@
   
   .pie-charts h2 {
     font-size: 20px;
+    margin-bottom: 10px;
+  }
+  
+  .usage-instructions {
+    font-size: 13px;
     margin-bottom: 20px;
+    padding: 10px 16px;
   }
   
   .pie-chart-container {
@@ -403,6 +433,13 @@
 }
 
 @media (max-width: 480px) {
+  .usage-instructions {
+    font-size: 12px;
+    margin-bottom: 15px;
+    padding: 8px 12px;
+    line-height: 1.3;
+  }
+  
   .pie-chart-svg {
     width: 240px;
     height: 240px;
@@ -448,219 +485,6 @@
   
   .hover-hint {
     font-size: 8px;
-  }
-  
-  .action-item {
-    padding: 5px 8px;
-    margin-bottom: 3px;
-  }
-  
-  .action-time {
-    font-size: 10px;
-    min-width: 30px;
-    margin-right: 8px;
-  }
-  
-  .action-name {
-    font-size: 11px;
-  }
-  
-  .no-actions {
-    padding: 15px;
-    font-size: 12px;
-  }: 16px;
-    padding: 10px 16px;
-  }
-  
-  .action-panel-fixed {
-    width: 280px;
-    max-height: 450px;
-    right: 10px;
-    top: 10px;
-  }
-  
-  .action-panel-header h4 {
-    font-size: 13px;
-  }
-  
-  .summary-stats span {
-    font-size: 11px;
-  }
-  
-  .hover-hint {
-    font-size: 9px;
-  }
-  
-  .action-item {
-    padding: 6px 10px;
-  }
-  
-  .action-time {
-    font-size: 11px;
-    min-width: 35px;
-    margin-right: 10px;
-  }
-  
-  .action-name {
-    font-size: 12px;
-  }
-}
-
-@media (max-width: 480px) {
-  .pie-chart-svg {
-    width: 240px;
-    height: 240px;
-  }
-  
-  .pie-chart-content {
-    gap: 10px;
-  }
-  
-  .total-wins {
-    font-size: 14px;
-    padding: 8px 12px;
-  }
-  
-  .action-panel-fixed {
-    width: 260px;
-    max-height: 400px;
-    right: 5px;
-    top: 5px;
-  }
-  
-  .action-panel-header {
-    padding: 10px 12px;
-  }
-  
-  .action-panel-header h4 {
-    font-size: 12px;
-  }
-  
-  .close-btn {
-    font-size: 18px;
-    width: 20px;
-    height: 20px;
-  }
-  
-  .action-panel-summary {
-    padding: 6px 12px;
-  }
-  
-  .summary-stats span {
-    font-size: 10px;
-  }
-  
-  .hover-hint {
-    font-size: 8px;
-  }
-  
-  .action-item {
-    padding: 5px 8px;
-    margin-bottom: 3px;
-  }
-  
-  .action-time {
-    font-size: 10px;
-    min-width: 30px;
-    margin-right: 8px;
-  }
-  
-  .action-name {
-    font-size: 11px;
-  }
-  
-  .no-actions {
-    padding: 15px;
-    font-size: 12px;
-  }
-}: 16px;
-    padding: 10px 16px;
-  }
-  
-  .tooltip {
-    font-size: 11px;
-    padding: 6px 10px;
-  }
-  
-  .tooltip-title {
-    font-size: 12px;
-    margin-bottom: 3px;
-  }
-  
-  .tooltip-hint {
-    font-size: 9px;
-  }
-  
-  .action-panel {
-    width: 280px;
-    max-height: 350px;
-  }
-  
-  .action-panel-header h4 {
-    font-size: 13px;
-  }
-  
-  .action-item {
-    padding: 6px 10px;
-  }
-  
-  .action-time {
-    font-size: 11px;
-    min-width: 35px;
-    margin-right: 10px;
-  }
-  
-  .action-name {
-    font-size: 12px;
-  }
-}
-
-@media (max-width: 480px) {
-  .pie-chart-svg {
-    width: 240px;
-    height: 240px;
-  }
-  
-  .pie-chart-content {
-    gap: 10px;
-  }
-  
-  .total-wins {
-    font-size: 14px;
-    padding: 8px 12px;
-  }
-  
-  .tooltip {
-    font-size: 10px;
-    padding: 5px 8px;
-  }
-  
-  .tooltip-title {
-    font-size: 11px;
-    margin-bottom: 2px;
-  }
-  
-  .tooltip-hint {
-    font-size: 8px;
-  }
-  
-  .action-panel {
-    width: 260px;
-    max-height: 300px;
-  }
-  
-  .action-panel-header {
-    padding: 10px 12px;
-  }
-  
-  .action-panel-header h4 {
-    font-size: 12px;
-  }
-  
-  .close-btn {
-    font-size: 18px;
-    width: 20px;
-    height: 20px;
   }
   
   .action-item {
