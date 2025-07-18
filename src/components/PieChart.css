@@ -1,33 +1,685 @@
-.pie-chart {
-  background-color: #f5f5f5;
-  border-radius: 8px;
-  padding: 20px;
+.pie-charts {
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  padding: 30px;
   margin-top: 20px;
-  text-align: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-.pie-chart h2 {
+.pie-charts h2 {
+  margin-top: 0;
+  margin-bottom: 30px;
+  color: #2c3e50;
+  text-align: center;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.charts-container {
+  display: flex;
+  gap: 40px;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.pie-chart-container {
+  flex: 1;
+  max-width: 500px;
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: relative;
+}
+
+.pie-chart-container h3 {
   margin-top: 0;
   margin-bottom: 20px;
-  color: #333;
-  font-size: 1.2em;
+  color: #2c3e50;
+  text-align: center;
+  font-size: 18px;
+  font-weight: 600;
+  border-bottom: 2px solid #ecf0f1;
+  padding-bottom: 10px;
 }
 
-.pie-canvas {
+.pie-chart-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.pie-chart-wrapper {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.pie-chart-svg {
+  border-radius: 50%;
+  background-color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: transform 0.3s ease;
+}
+
+.pie-chart-svg:hover {
+  transform: scale(1.02);
+}
+
+.pie-slice {
+  transition: all 0.3s ease;
+  cursor: pointer;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+.pie-slice:hover {
+  opacity: 0.9;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.2)) brightness(1.1);
+  transform: scale(1.05);
+  transform-origin: center;
+}
+
+/* 滚动条样式 */
+.action-panel-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.action-panel-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.action-panel-content::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.action-panel-content::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+/* 固定在右上角的动作面板 */
+.action-panel-fixed {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
   border: 1px solid #ddd;
+  width: 320px;
+  max-height: 500px;
+  z-index: 1001;
+  animation: panelFadeIn 0.3s ease-out;
+  overflow: hidden;
+}
+
+.action-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.action-panel-header h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   border-radius: 4px;
-  background-color: white;
-  max-width: 100%;
-  height: auto;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  background-color: #e9ecef;
+  color: #495057;
+}
+
+.action-panel-summary {
+  padding: 8px 16px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.summary-stats {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.summary-stats span {
+  font-size: 12px;
+  color: #495057;
+  line-height: 1;
+}
+
+.summary-stats span:not(:last-child):after {
+  content: " |";
+  margin-left: 8px;
+  color: #888;
+}
+
+.hover-hint {
+  font-size: 10px;
+  color: #6c757d;
+  text-align: center;
+  font-style: italic;
+  margin-top: 4px;
+}
+
+.action-panel-content {
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+.action-list {
+  padding: 8px;
+}
+
+.action-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  margin-bottom: 4px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+}
+
+.action-item:hover {
+  background-color: #e9ecef;
+  border-left-color: #007bff;
+  transform: translateX(2px);
+}
+
+.action-item:last-child {
+  margin-bottom: 0;
+}
+
+.action-time {
+  font-weight: 600;
+  color: #007bff;
+  font-size: 12px;
+  min-width: 40px;
+  margin-right: 12px;
+}
+
+.action-name {
+  flex: 1;
+  font-size: 13px;
+  color: #2c3e50;
+  line-height: 1.4;
+}
+
+.no-actions {
+  padding: 20px;
+  text-align: center;
+  color: #6c757d;
+  font-style: italic;
+  font-size: 14px;
+}
+
+@keyframes tooltipFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes panelFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+
+
+.total-wins {
+  margin-top: 10px;
+  padding: 12px 20px;
+  background-color: #e8f4f8;
+  border-radius: 8px;
+  text-align: center;
+  font-weight: 600;
+  font-size: 18px;
+  color: #2c3e50;
+  border: 2px solid #3498db;
+  min-width: 200px;
+}
+
+.no-data {
+  text-align: center;
+  color: #7f8c8d;
+  font-style: italic;
+  padding: 40px 20px;
+  font-size: 16px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  border: 2px dashed #bdc3c7;
+}
+
+.empty-state {
+  text-align: center;
+  color: #7f8c8d;
+  font-style: italic;
+  padding: 40px;
+  font-size: 16px;
+}
+
+/* 动画效果 */
+@keyframes pieSliceIn {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.pie-slice {
+  animation: pieSliceIn 0.6s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  transform-origin: center center;
+}
+
+.pie-slice:nth-child(1) { animation-delay: 0.1s; }
+.pie-slice:nth-child(2) { animation-delay: 0.2s; }
+.pie-slice:nth-child(3) { animation-delay: 0.3s; }
+.pie-slice:nth-child(4) { animation-delay: 0.4s; }
+.pie-slice:nth-child(5) { animation-delay: 0.5s; }
+
+/* 响应式设计 */
+@media (max-width: 1024px) {
+  .charts-container {
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+  }
+  
+  .pie-chart-container {
+    max-width: 450px;
+    width: 100%;
+  }
+  
+  .action-panel-fixed {
+    width: 300px;
+    right: 15px;
+    top: 15px;
+  }
 }
 
 @media (max-width: 768px) {
-  .pie-chart {
-    padding: 15px;
+  .pie-charts {
+    padding: 20px;
   }
   
-  .pie-canvas {
-    width: 100%;
-    height: auto;
+  .pie-charts h2 {
+    font-size: 20px;
+    margin-bottom: 20px;
+  }
+  
+  .pie-chart-container {
+    padding: 15px;
+    max-width: 400px;
+  }
+  
+  .pie-chart-container h3 {
+    font-size: 16px;
+  }
+  
+  .pie-chart-svg {
+    width: 280px;
+    height: 280px;
+  }
+  
+  .total-wins {
+    font-size: 16px;
+    padding: 10px 16px;
+  }
+  
+  .action-panel-fixed {
+    width: 280px;
+    max-height: 450px;
+    right: 10px;
+    top: 10px;
+  }
+  
+  .action-panel-header h4 {
+    font-size: 13px;
+  }
+  
+  .summary-stats span {
+    font-size: 11px;
+  }
+  
+  .hover-hint {
+    font-size: 9px;
+  }
+  
+  .action-item {
+    padding: 6px 10px;
+  }
+  
+  .action-time {
+    font-size: 11px;
+    min-width: 35px;
+    margin-right: 10px;
+  }
+  
+  .action-name {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .pie-chart-svg {
+    width: 240px;
+    height: 240px;
+  }
+  
+  .pie-chart-content {
+    gap: 10px;
+  }
+  
+  .total-wins {
+    font-size: 14px;
+    padding: 8px 12px;
+  }
+  
+  .action-panel-fixed {
+    width: 260px;
+    max-height: 400px;
+    right: 5px;
+    top: 5px;
+  }
+  
+  .action-panel-header {
+    padding: 10px 12px;
+  }
+  
+  .action-panel-header h4 {
+    font-size: 12px;
+  }
+  
+  .close-btn {
+    font-size: 18px;
+    width: 20px;
+    height: 20px;
+  }
+  
+  .action-panel-summary {
+    padding: 6px 12px;
+  }
+  
+  .summary-stats span {
+    font-size: 10px;
+  }
+  
+  .hover-hint {
+    font-size: 8px;
+  }
+  
+  .action-item {
+    padding: 5px 8px;
+    margin-bottom: 3px;
+  }
+  
+  .action-time {
+    font-size: 10px;
+    min-width: 30px;
+    margin-right: 8px;
+  }
+  
+  .action-name {
+    font-size: 11px;
+  }
+  
+  .no-actions {
+    padding: 15px;
+    font-size: 12px;
+  }: 16px;
+    padding: 10px 16px;
+  }
+  
+  .action-panel-fixed {
+    width: 280px;
+    max-height: 450px;
+    right: 10px;
+    top: 10px;
+  }
+  
+  .action-panel-header h4 {
+    font-size: 13px;
+  }
+  
+  .summary-stats span {
+    font-size: 11px;
+  }
+  
+  .hover-hint {
+    font-size: 9px;
+  }
+  
+  .action-item {
+    padding: 6px 10px;
+  }
+  
+  .action-time {
+    font-size: 11px;
+    min-width: 35px;
+    margin-right: 10px;
+  }
+  
+  .action-name {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .pie-chart-svg {
+    width: 240px;
+    height: 240px;
+  }
+  
+  .pie-chart-content {
+    gap: 10px;
+  }
+  
+  .total-wins {
+    font-size: 14px;
+    padding: 8px 12px;
+  }
+  
+  .action-panel-fixed {
+    width: 260px;
+    max-height: 400px;
+    right: 5px;
+    top: 5px;
+  }
+  
+  .action-panel-header {
+    padding: 10px 12px;
+  }
+  
+  .action-panel-header h4 {
+    font-size: 12px;
+  }
+  
+  .close-btn {
+    font-size: 18px;
+    width: 20px;
+    height: 20px;
+  }
+  
+  .action-panel-summary {
+    padding: 6px 12px;
+  }
+  
+  .summary-stats span {
+    font-size: 10px;
+  }
+  
+  .hover-hint {
+    font-size: 8px;
+  }
+  
+  .action-item {
+    padding: 5px 8px;
+    margin-bottom: 3px;
+  }
+  
+  .action-time {
+    font-size: 10px;
+    min-width: 30px;
+    margin-right: 8px;
+  }
+  
+  .action-name {
+    font-size: 11px;
+  }
+  
+  .no-actions {
+    padding: 15px;
+    font-size: 12px;
+  }
+}: 16px;
+    padding: 10px 16px;
+  }
+  
+  .tooltip {
+    font-size: 11px;
+    padding: 6px 10px;
+  }
+  
+  .tooltip-title {
+    font-size: 12px;
+    margin-bottom: 3px;
+  }
+  
+  .tooltip-hint {
+    font-size: 9px;
+  }
+  
+  .action-panel {
+    width: 280px;
+    max-height: 350px;
+  }
+  
+  .action-panel-header h4 {
+    font-size: 13px;
+  }
+  
+  .action-item {
+    padding: 6px 10px;
+  }
+  
+  .action-time {
+    font-size: 11px;
+    min-width: 35px;
+    margin-right: 10px;
+  }
+  
+  .action-name {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .pie-chart-svg {
+    width: 240px;
+    height: 240px;
+  }
+  
+  .pie-chart-content {
+    gap: 10px;
+  }
+  
+  .total-wins {
+    font-size: 14px;
+    padding: 8px 12px;
+  }
+  
+  .tooltip {
+    font-size: 10px;
+    padding: 5px 8px;
+  }
+  
+  .tooltip-title {
+    font-size: 11px;
+    margin-bottom: 2px;
+  }
+  
+  .tooltip-hint {
+    font-size: 8px;
+  }
+  
+  .action-panel {
+    width: 260px;
+    max-height: 300px;
+  }
+  
+  .action-panel-header {
+    padding: 10px 12px;
+  }
+  
+  .action-panel-header h4 {
+    font-size: 12px;
+  }
+  
+  .close-btn {
+    font-size: 18px;
+    width: 20px;
+    height: 20px;
+  }
+  
+  .action-item {
+    padding: 5px 8px;
+    margin-bottom: 3px;
+  }
+  
+  .action-time {
+    font-size: 10px;
+    min-width: 30px;
+    margin-right: 8px;
+  }
+  
+  .action-name {
+    font-size: 11px;
+  }
+  
+  .no-actions {
+    padding: 15px;
+    font-size: 12px;
   }
 }
