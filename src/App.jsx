@@ -3,6 +3,7 @@ import VideoPlayer from './components/VideoPlayer';
 import ActionList from './components/ActionList';
 import BarChart from './components/BarChart';
 import PieChart from './components/PieChart';
+import PieChart2 from './components/PieChart2';
 import { analyzeAllPlayersActions } from './utils/ActionAnalyzer';
 import './App.css';
 
@@ -23,7 +24,7 @@ function App() {
   const [canDownloadJson, setCanDownloadJson] = useState(false);
   
   // Define version and build time
-  const VERSION = "1.5.0"; // 版本号更新，添加了饼图
+  const VERSION = "1.6.0"; // 版本号更新，添加了失分饼图
   const BUILD_TIME = new Date().toLocaleString();
   
   const setUploadStatus = (status) => {
@@ -371,9 +372,18 @@ function App() {
           <BarChart gts={videoData.gts} />
         )}
         
-        {/* 添加饼图组件 */}
+        {/* 添加得分饼图组件 */}
         {videoData && videoData.gts && (
           <PieChart 
+            gts={videoData.gts} 
+            onActionClick={handleActionClick}
+            fps={fps}
+          />
+        )}
+        
+        {/* 添加失分饼图组件 */}
+        {videoData && videoData.gts && (
+          <PieChart2 
             gts={videoData.gts} 
             onActionClick={handleActionClick}
             fps={fps}
