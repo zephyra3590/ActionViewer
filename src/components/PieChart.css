@@ -71,9 +71,8 @@
 }
 
 .pie-chart-svg {
-  border-radius: 50%;
-  background-color: #fff;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  /* 移除了 border-radius 和 box-shadow，去掉外层圈 */
+  background-color: transparent;
   transition: transform 0.3s ease;
 }
 
@@ -389,8 +388,8 @@
   }
   
   .pie-chart-svg {
-    width: 280px;
-    height: 280px;
+    width: 373px;
+    height: 373px;
   }
   
   .total-wins {
@@ -441,8 +440,8 @@
   }
   
   .pie-chart-svg {
-    width: 240px;
-    height: 240px;
+    width: 320px;
+    height: 320px;
   }
   
   .pie-chart-content {
