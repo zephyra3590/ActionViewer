@@ -6,7 +6,8 @@ const PieChart = ({ gts, onActionClick, fps }) => {
     visible: false,
     content: null,
     chartId: null,
-    isHovered: false // 区分是悬停还是点击
+    isHovered: false, // 区分是悬停还是点击
+    position: { x: 0, y: 0 } // 鼠标位置
   });
   // 提取动作名称的主要部分（括号前的部分）
   const extractActionType = (actionName) => {
@@ -62,9 +63,24 @@ const PieChart = ({ gts, onActionClick, fps }) => {
       visible: false,
       content: null,
       chartId: null,
-      isHovered: false
+      isHovered: false,
+      position: { x: 0, y: 0 }
     });
   };
+  
+  // ESC键关闭面板
+  React.useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape' && actionPanel.visible) {
+        handlePanelClose();
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [actionPanel.visible]);
   
   // 动作项点击处理函数
   const handleActionItemClick = (action, event) => {
@@ -176,6 +192,11 @@ const PieChart = ({ gts, onActionClick, fps }) => {
     let currentAngle = 0;
     
     const handleMouseEnter = (item, event) => {
+      // 获取鼠标位置
+      const rect = event.currentTarget.getBoundingClientRect();
+      const mouseX = event.clientX;
+      const mouseY = event.clientY;
+      
       // 获取该动作类型的所有得分动作
       const playerActions = playerId === 'player1' ? gts[0].actions : gts[1].actions;
       const actionDetails = getWinningActionDetails(item.label, playerActions);
@@ -193,7 +214,8 @@ const PieChart = ({ gts, onActionClick, fps }) => {
           }
         },
         chartId: playerId,
-        isHovered: true
+        isHovered: true,
+        position: { x: mouseX, y: mouseY }
       });
     };
     
@@ -204,7 +226,8 @@ const PieChart = ({ gts, onActionClick, fps }) => {
           visible: false,
           content: null,
           chartId: null,
-          isHovered: false
+          isHovered: false,
+          position: { x: 0, y: 0 }
         });
       }
     };
@@ -229,7 +252,8 @@ const PieChart = ({ gts, onActionClick, fps }) => {
           }
         },
         chartId: playerId,
-        isHovered: false // 点击状态
+        isHovered: false, // 点击状态
+        position: { x: 0, y: 0 } // 点击时使用固定位置
       });
     };
     
@@ -284,19 +308,33 @@ const PieChart = ({ gts, onActionClick, fps }) => {
           visible: false,
           content: null,
           chartId: null,
-          isHovered: false
+          isHovered: false,
+          position: { x: 0, y: 0 }
         });
       }
     }}>
       <h2>得点動作分布</h2>
+      <div className="usage-instructions">
+        切片にマウスを合わせると詳細表示 | 
+        クリックすると固定表示 | 
+        Escキーまたは×ボタンで閉じる
+      </div>
       <div className="charts-container">
         {renderPieChart(player1WinningData, "手前の選手", "player1")}
         {renderPieChart(player2WinningData, "奥の選手", "player2")}
       </div>
       
-      {/* 固定在右上角的面板 */}
+      {/* 动态位置的面板 */}
       {actionPanel.visible && actionPanel.content && (
-        <div className="action-panel-fixed">
+        <div 
+          className={actionPanel.isHovered ? "action-panel-hover" : "action-panel-fixed"}
+          style={actionPanel.isHovered ? {
+            position: 'fixed',
+            left: `${Math.min(actionPanel.position.x + 10, window.innerWidth - 320)}px`,
+            top: `${Math.min(actionPanel.position.y + 10, window.innerHeight - 400)}px`,
+            zIndex: 1002
+          } : {}}
+        >
           <div className="action-panel-header">
             <h4>{actionPanel.content.playerTitle} - {actionPanel.content.actionType}</h4>
             <button className="close-btn" onClick={handlePanelClose}>×</button>
