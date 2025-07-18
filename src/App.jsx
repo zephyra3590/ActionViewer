@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import VideoPlayer from './components/VideoPlayer';
 import ActionList from './components/ActionList';
 import BarChart from './components/BarChart';
+import PieChart from './components/PieChart';
 import { analyzeAllPlayersActions } from './utils/ActionAnalyzer';
 import './App.css';
 
@@ -22,7 +23,7 @@ function App() {
   const [canDownloadJson, setCanDownloadJson] = useState(false);
   
   // Define version and build time
-  const VERSION = "1.4.0"; // 版本号更新，添加了条形图
+  const VERSION = "1.5.0"; // 版本号更新，添加了饼图
   const BUILD_TIME = new Date().toLocaleString();
   
   const setUploadStatus = (status) => {
@@ -368,6 +369,15 @@ function App() {
         {/* 添加条形图组件 */}
         {videoData && videoData.gts && (
           <BarChart gts={videoData.gts} />
+        )}
+        
+        {/* 添加饼图组件 */}
+        {videoData && videoData.gts && (
+          <PieChart 
+            gts={videoData.gts} 
+            onActionClick={handleActionClick}
+            fps={fps}
+          />
         )}
         
         {!videoUrl && (
