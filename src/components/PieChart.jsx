@@ -67,11 +67,12 @@ const PieChart = ({ gts, onActionClick, fps }) => {
   };
   
   // 动作项点击处理函数
-  const handleActionItemClick = (action) => {
+  const handleActionItemClick = (action, event) => {
+    event.stopPropagation(); // 阻止事件冒泡
     if (onActionClick) {
       onActionClick(action.start_id);
     }
-    handlePanelClose();
+    // 移除 handlePanelClose() 调用，保持浮窗打开
   };
   
   // 计算选手的得分动作分布
@@ -319,7 +320,7 @@ const PieChart = ({ gts, onActionClick, fps }) => {
                   <div 
                     key={index}
                     className="action-item"
-                    onClick={() => handleActionItemClick(action)}
+                    onClick={(e) => handleActionItemClick(action, e)}
                   >
                     <div className="action-time">{action.timeInSeconds}s</div>
                     <div className="action-name">{action.fullName}</div>
