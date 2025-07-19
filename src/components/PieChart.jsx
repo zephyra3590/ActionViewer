@@ -7,8 +7,10 @@ const PieChart = ({ gts, onActionClick, fps }) => {
     content: null,
     chartId: null,
     isHovered: false, // 区分是悬停还是点击
-    position: { x: 0, y: 0 } // 鼠标位置
+    position: { x: 0, y: 0 }, // 鼠标位置
+    isFixed: false // 新增：标识浮窗是否已被固定
   });
+  
   // 提取动作名称的主要部分（括号前的部分）
   const extractActionType = (actionName) => {
     if (!actionName) return 'その他';
@@ -64,7 +66,8 @@ const PieChart = ({ gts, onActionClick, fps }) => {
       content: null,
       chartId: null,
       isHovered: false,
-      position: { x: 0, y: 0 }
+      position: { x: 0, y: 0 },
+      isFixed: false // 重置固定状态
     });
   };
   
@@ -192,6 +195,9 @@ const PieChart = ({ gts, onActionClick, fps }) => {
     let currentAngle = 0;
     
     const handleMouseEnter = (item, event) => {
+      // 如果浮窗已被固定，则不响应鼠标悬停
+      if (actionPanel.isFixed) return;
+      
       // 获取鼠标位置
       const rect = event.currentTarget.getBoundingClientRect();
       const mouseX = event.clientX;
@@ -215,13 +221,17 @@ const PieChart = ({ gts, onActionClick, fps }) => {
         },
         chartId: playerId,
         isHovered: true,
-        position: { x: mouseX, y: mouseY }
+        position: { x: mouseX, y: mouseY },
+        isFixed: false // 悬停状态下不是固定的
       });
     };
 
     const handleMouseMove = (item, event) => {
+      // 如果浮窗已被固定，则不响应鼠标移动
+      if (actionPanel.isFixed) return;
+      
       // 只有在悬停状态下才更新位置
-      if (actionPanel.isHovered && actionPanel.visible) {
+      if (actionPanel.isHovered && actionPanel.visible && !actionPanel.isFixed) {
         const mouseX = event.clientX;
         const mouseY = event.clientY;
         
@@ -233,14 +243,18 @@ const PieChart = ({ gts, onActionClick, fps }) => {
     };
     
     const handleMouseLeave = () => {
+      // 如果浮窗已被固定，则不响应鼠标离开
+      if (actionPanel.isFixed) return;
+      
       // 只有在悬停状态下才隐藏面板
-      if (actionPanel.isHovered) {
+      if (actionPanel.isHovered && !actionPanel.isFixed) {
         setActionPanel({
           visible: false,
           content: null,
           chartId: null,
           isHovered: false,
-          position: { x: 0, y: 0 }
+          position: { x: 0, y: 0 },
+          isFixed: false
         });
       }
     };
@@ -266,7 +280,8 @@ const PieChart = ({ gts, onActionClick, fps }) => {
         },
         chartId: playerId,
         isHovered: false, // 点击状态
-        position: { x: 0, y: 0 } // 点击时使用固定位置
+        position: { x: 0, y: 0 }, // 点击时使用固定位置
+        isFixed: true // 点击后设置为固定状态
       });
     };
     
@@ -323,7 +338,8 @@ const PieChart = ({ gts, onActionClick, fps }) => {
           content: null,
           chartId: null,
           isHovered: false,
-          position: { x: 0, y: 0 }
+          position: { x: 0, y: 0 },
+          isFixed: false
         });
       }
     }}>
@@ -360,7 +376,7 @@ const PieChart = ({ gts, onActionClick, fps }) => {
               <span>割合: {actionPanel.content.summary.percentage}%</span>
               <span>総得点: {actionPanel.content.summary.total}回</span>
             </div>
-            {actionPanel.isHovered && (
+            {actionPanel.isHovered && !actionPanel.isFixed && (
               <div className="hover-hint">クリックで固定表示</div>
             )}
           </div>
