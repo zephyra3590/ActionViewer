@@ -84,7 +84,7 @@ const PieChart2 = ({ gts, onActionClick, fps }) => {
     
     return losingActions.map(action => ({
       ...action,
-      timeInSeconds: Math.round(action.start_id / fps * 10) / 10,
+      timeInSeconds: action.start_id ? Math.round(action.start_id * 10) / 10 : 0,
       fullName: action.label_names[0]
     }));
   };
@@ -419,7 +419,7 @@ const PieChart2 = ({ gts, onActionClick, fps }) => {
                     className="action-item2"
                     onClick={(e) => handleActionItemClick(action, e)}
                   >
-                    <div className="action-time2">{action.timeInSeconds}s</div>
+                    <div className="action-time">{Math.floor(action.timeInSeconds / 60)}:{String(Math.floor(action.timeInSeconds % 60)).padStart(2, '0')}</div>
                     <div className="action-name2">{action.fullName}</div>
                   </div>
                 ))}
