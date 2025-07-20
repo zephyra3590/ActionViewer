@@ -1,8 +1,217 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './BarChart.css';
 import { analyzeActionSuccess } from '../utils/ActionAnalyzer';
 
-const BarChart = ({ gts }) => {
+const BarChart = ({ gts, onActionClick, fps }) => {
+  const [actionPanel, setActionPanel] = useState({
+    visible: false,
+    content: null,
+    chartId: null,
+    isHovered: false, // 区分是悬停还是点击
+    position: { x: 0, y: 0 }, // 鼠标位置
+    isFixed: false // 标识浮窗是否已被固定
+  });
+
+  // 获取某个动作类型的所有动作详情
+  const getActionDetails = (actionType, actions, playerSide) => {
+    if (!actions || actions.length === 0) return [];
+    
+    let filteredActions = [];
+    
+    if (actionType === '全体') {
+      filteredActions = actions;
+    } else if (actionType === 'サーブ') {
+      filteredActions = actions.filter(action => 
+        action.label_names && action.label_names[0] && 
+        action.label_names[0].includes('サーブ')
+      );
+    } else if (actionType === 'ロブ') {
+      filteredActions = actions.filter(action => 
+        action.label_names && action.label_names[0] && 
+        action.label_names[0].includes('ロブ')
+      );
+    } else if (actionType === 'ネット/ヘアピン') {
+      filteredActions = actions.filter(action => 
+        action.label_names && action.label_names[0] && 
+        (action.label_names[0].includes('ネット') || action.label_names[0].includes('ヘアピン'))
+      );
+    } else if (actionType === 'プッシュ') {
+      filteredActions = actions.filter(action => 
+        action.label_names && action.label_names[0] && 
+        action.label_names[0].includes('プッシュ')
+      );
+    } else if (actionType === 'ドライブ') {
+      filteredActions = actions.filter(action => 
+        action.label_names && action.label_names[0] && 
+        action.label_names[0].includes('ドライブ')
+      );
+    } else if (actionType === 'スマッシュレシーブ') {
+      filteredActions = actions.filter(action => 
+        action.label_names && action.label_names[0] && 
+        action.label_names[0].includes('スマッシュレシーブ')
+      );
+    } else if (actionType === 'クリアー') {
+      filteredActions = actions.filter(action => 
+        action.label_names && action.label_names[0] && 
+        action.label_names[0].includes('クリアー')
+      );
+    } else if (actionType === 'スマッシュ') {
+      filteredActions = actions.filter(action => 
+        action.label_names && action.label_names[0] && 
+        action.label_names[0].includes('スマッシュ') &&
+        !action.label_names[0].includes('スマッシュレシーブ')
+      );
+    } else if (actionType === 'ドロップ/カット') {
+      filteredActions = actions.filter(action => 
+        action.label_names && action.label_names[0] && 
+        (action.label_names[0].includes('ドロップ') || action.label_names[0].includes('カット'))
+      );
+    } else if (actionType === 'ディフェンス') {
+      filteredActions = actions.filter(action => 
+        action.label_names && action.label_names[0] && 
+        action.label_names[0].includes('ディフェンス')
+      );
+    } else if (actionType === 'ジャッジ') {
+      filteredActions = actions.filter(action => 
+        action.label_names && action.label_names[0] && 
+        action.label_names[0].includes('ジャッジ')
+      );
+    }
+    
+    return filteredActions.map(action => ({
+      ...action,
+      timeInSeconds: action.start_id ? Math.round(action.start_id * 10) / 10 : 0,
+      fullName: action.label_names && action.label_names[0] ? action.label_names[0] : 'Unknown',
+      success: analyzeActionSuccess(action, actions)
+    }));
+  };
+
+  // 关闭面板的处理函数
+  const handlePanelClose = () => {
+    setActionPanel({
+      visible: false,
+      content: null,
+      chartId: null,
+      isHovered: false,
+      position: { x: 0, y: 0 },
+      isFixed: false
+    });
+  };
+
+  // ESC键关闭面板
+  React.useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape' && actionPanel.visible) {
+        handlePanelClose();
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [actionPanel.visible]);
+
+  // 动作项点击处理函数
+  const handleActionItemClick = (action, event) => {
+    event.stopPropagation();
+    if (onActionClick) {
+      onActionClick(action.start_id);
+    }
+  };
+
+  // 柱状图悬停处理
+  const handleBarMouseEnter = (actionType, playerSide, event) => {
+    if (actionPanel.isFixed) return;
+    
+    const mouseX = event.clientX;
+    const mouseY = event.clientY;
+    
+    const playerActions = playerSide === 'player1' ? gts[0].actions : gts[1].actions;
+    const actionDetails = getActionDetails(actionType, playerActions, playerSide);
+    
+    // 计算成功率统计
+    const totalActions = actionDetails.length;
+    const successfulActions = actionDetails.filter(action => action.success === 'success').length;
+    const successRate = totalActions > 0 ? Math.round((successfulActions / totalActions) * 100) : 0;
+    
+    setActionPanel({
+      visible: true,
+      content: {
+        actionType: actionType,
+        actions: actionDetails,
+        playerTitle: playerSide === 'player1' ? '手前の選手' : '奥の選手',
+        summary: {
+          total: totalActions,
+          successful: successfulActions,
+          successRate: successRate
+        }
+      },
+      chartId: `${playerSide}-${actionType}`,
+      isHovered: true,
+      position: { x: mouseX, y: mouseY },
+      isFixed: false
+    });
+  };
+
+  const handleBarMouseMove = (event) => {
+    if (actionPanel.isFixed) return;
+    
+    if (actionPanel.isHovered && actionPanel.visible && !actionPanel.isFixed) {
+      const mouseX = event.clientX;
+      const mouseY = event.clientY;
+      
+      setActionPanel(prev => ({
+        ...prev,
+        position: { x: mouseX, y: mouseY }
+      }));
+    }
+  };
+
+  const handleBarMouseLeave = () => {
+    if (actionPanel.isFixed) return;
+    
+    if (actionPanel.isHovered && !actionPanel.isFixed) {
+      setActionPanel({
+        visible: false,
+        content: null,
+        chartId: null,
+        isHovered: false,
+        position: { x: 0, y: 0 },
+        isFixed: false
+      });
+    }
+  };
+
+  const handleBarClick = (actionType, playerSide, event) => {
+    event.stopPropagation();
+    
+    const playerActions = playerSide === 'player1' ? gts[0].actions : gts[1].actions;
+    const actionDetails = getActionDetails(actionType, playerActions, playerSide);
+    
+    const totalActions = actionDetails.length;
+    const successfulActions = actionDetails.filter(action => action.success === 'success').length;
+    const successRate = totalActions > 0 ? Math.round((successfulActions / totalActions) * 100) : 0;
+    
+    setActionPanel({
+      visible: true,
+      content: {
+        actionType: actionType,
+        actions: actionDetails,
+        playerTitle: playerSide === 'player1' ? '手前の選手' : '奥の選手',
+        summary: {
+          total: totalActions,
+          successful: successfulActions,
+          successRate: successRate
+        }
+      },
+      chartId: `${playerSide}-${actionType}`,
+      isHovered: false,
+      position: { x: 0, y: 0 },
+      isFixed: true
+    });
+  };
+  
   // 计算发球成功率
   const calculateServeStats = (actions) => {
     if (!actions || actions.length === 0) return { total: 0, success: 0, rate: 0 };
@@ -306,8 +515,8 @@ const BarChart = ({ gts }) => {
   
   const player1SuccessRate = calculateSuccessRate(player1Actions);
   const player2SuccessRate = calculateSuccessRate(player2Actions);
-  
-  // 创建图表数据
+
+// 创建图表数据
   const chartData = [
     {
       label: '全体',
@@ -396,8 +605,27 @@ const BarChart = ({ gts }) => {
   ];
   
   return (
-    <div className="bar-chart">
+    <div className="bar-chart" onClick={() => {
+      // 点击外部区域关闭动作面板（仅当不是悬停状态时）
+      if (!actionPanel.isHovered) {
+        setActionPanel({
+          visible: false,
+          content: null,
+          chartId: null,
+          isHovered: false,
+          position: { x: 0, y: 0 },
+          isFixed: false
+        });
+      }
+    }}>
       <h2>選手データ比較 (成功率)</h2>
+      
+      {/* 使用说明 */}
+      <div className="usage-instructions">
+        柱にマウスを合わせると詳細表示 | 
+        クリックすると固定表示 | 
+        Escキーまたは×ボタンで閉じる
+      </div>
       
       {/* 选手头部信息 */}
       <div className="chart-header">
@@ -437,6 +665,10 @@ const BarChart = ({ gts }) => {
                     width: `${player1Width}%`,
                     '--target-width': `${player1Width}%`
                   }}
+                  onMouseEnter={(e) => handleBarMouseEnter(data.label, 'player1', e)}
+                  onMouseMove={handleBarMouseMove}
+                  onMouseLeave={handleBarMouseLeave}
+                  onClick={(e) => handleBarClick(data.label, 'player1', e)}
                 >
                   {data.player1Value > 0 && (
                     <span>
@@ -453,6 +685,10 @@ const BarChart = ({ gts }) => {
                     width: `${player2Width}%`,
                     '--target-width': `${player2Width}%`
                   }}
+                  onMouseEnter={(e) => handleBarMouseEnter(data.label, 'player2', e)}
+                  onMouseMove={handleBarMouseMove}
+                  onMouseLeave={handleBarMouseLeave}
+                  onClick={(e) => handleBarClick(data.label, 'player2', e)}
                 >
                   {data.player2Value > 0 && (
                     <span>
@@ -466,6 +702,62 @@ const BarChart = ({ gts }) => {
           </div>
         );
       })}
+
+      {/* 动态位置的面板 */}
+      {actionPanel.visible && actionPanel.content && (
+        <div 
+          className={actionPanel.isHovered ? "action-panel-hover" : "action-panel-fixed"}
+          style={actionPanel.isHovered ? {
+            position: 'fixed',
+            left: `${Math.min(actionPanel.position.x + 10, window.innerWidth - 320)}px`,
+            top: `${Math.min(actionPanel.position.y + 10, window.innerHeight - 400)}px`,
+            zIndex: 1002
+          } : {}}
+        >
+          <div className="action-panel-header">
+            <h4>{actionPanel.content.playerTitle} - {actionPanel.content.actionType}</h4>
+            <button className="close-btn" onClick={handlePanelClose}>×</button>
+          </div>
+          
+          <div className="action-panel-summary">
+            <div className="summary-stats">
+              <span>総数: {actionPanel.content.summary.total}回</span>
+              <span>成功: {actionPanel.content.summary.successful}回</span>
+              <span>成功率: {actionPanel.content.summary.successRate}%</span>
+            </div>
+            {actionPanel.isHovered && !actionPanel.isFixed && (
+              <div className="hover-hint">クリックで固定表示</div>
+            )}
+          </div>
+          
+          <div className="action-panel-content">
+            {actionPanel.content.actions.length > 0 ? (
+              <div className="action-list">
+                {actionPanel.content.actions.map((action, index) => (
+                  <div 
+                    key={index}
+                    className="action-item"
+                    onClick={(e) => handleActionItemClick(action, e)}
+                  >
+                    <div className="action-time">
+                      {Math.floor(action.timeInSeconds / 60)}:
+                      {String(Math.floor(action.timeInSeconds % 60)).padStart(2, '0')}
+                    </div>
+                    <div className="action-name">
+                      {action.fullName}
+                      <span className={`action-status ${action.success}`}>
+                        {action.success === 'success' ? '✓' : '✗'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="no-actions">この動作のデータがありません</div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

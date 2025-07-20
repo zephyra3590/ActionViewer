@@ -369,7 +369,11 @@ function App() {
         
         {/* 添加条形图组件 */}
         {videoData && videoData.gts && (
-          <BarChart gts={videoData.gts} />
+          <BarChart 
+            gts={videoData.gts} 
+            onActionClick={handleActionClick}
+            fps={fps}
+          />
         )}
         
         {/* 添加得分饼图组件 */}

@@ -15,6 +15,19 @@
   font-weight: 600;
 }
 
+.usage-instructions {
+  text-align: center;
+  color: #6c757d;
+  font-size: 14px;
+  margin-bottom: 30px;
+  padding: 12px 20px;
+  background-color: #e8f4f8;
+  border-radius: 8px;
+  border-left: 4px solid #17a2b8;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
 .chart-header {
   display: flex;
   justify-content: space-between;
@@ -119,6 +132,7 @@
   font-size: 13px;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
   box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.3);
+  cursor: pointer;
 }
 
 .bar-left:not([style*="width: 0"]):not([style*="width:0"]) {
@@ -141,6 +155,7 @@
   font-size: 13px;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
   box-shadow: inset 0 1px 3px rgba(255, 255, 255, 0.3);
+  cursor: pointer;
 }
 
 .bar-right:not([style*="width: 0"]):not([style*="width:0"]) {
@@ -151,6 +166,7 @@
 .bar-left:hover,
 .bar-right:hover {
   filter: brightness(1.1);
+  transform: scale(1.02);
 }
 
 .empty-state {
@@ -159,6 +175,210 @@
   font-style: italic;
   padding: 40px;
   font-size: 16px;
+}
+
+/* 固定在右上角的动作面板 */
+.action-panel-fixed {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  border: 1px solid #ddd;
+  width: 320px;
+  max-height: 500px;
+  z-index: 1001;
+  animation: panelFadeIn 0.3s ease-out;
+  overflow: hidden;
+}
+
+/* 鼠标悬停时跟随鼠标的面板 */
+.action-panel-hover {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  border: 1px solid #ddd;
+  width: 320px;
+  max-height: 400px;
+  animation: panelFadeIn 0.2s ease-out;
+  overflow: hidden;
+  pointer-events: none; /* 防止鼠标事件干扰 */
+}
+
+.action-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.action-panel-header h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #6c757d;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  background-color: #e9ecef;
+  color: #495057;
+}
+
+.action-panel-summary {
+  padding: 8px 16px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.summary-stats {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 4px;
+}
+
+.summary-stats span {
+  font-size: 12px;
+  color: #495057;
+  line-height: 1;
+}
+
+.summary-stats span:not(:last-child):after {
+  content: " |";
+  margin-left: 8px;
+  color: #888;
+}
+
+.hover-hint {
+  font-size: 10px;
+  color: #6c757d;
+  text-align: center;
+  font-style: italic;
+  margin-top: 4px;
+}
+
+.action-panel-content {
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+/* 滚动条样式 */
+.action-panel-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.action-panel-content::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.action-panel-content::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
+}
+
+.action-panel-content::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
+}
+
+.action-list {
+  padding: 8px;
+}
+
+.action-item {
+  display: flex;
+  align-items: center;
+  padding: 8px 12px;
+  margin-bottom: 4px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-left: 3px solid transparent;
+}
+
+.action-item:hover {
+  background-color: #e9ecef;
+  border-left-color: #007bff;
+  transform: translateX(2px);
+}
+
+.action-item:last-child {
+  margin-bottom: 0;
+}
+
+.action-time {
+  font-weight: 600;
+  color: #007bff;
+  font-size: 12px;
+  min-width: 40px;
+  margin-right: 12px;
+}
+
+.action-name {
+  flex: 1;
+  font-size: 13px;
+  color: #2c3e50;
+  line-height: 1.4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.action-status {
+  font-weight: bold;
+  font-size: 14px;
+  margin-left: 8px;
+}
+
+.action-status.success {
+  color: #28a745;
+}
+
+.action-status.failure {
+  color: #dc3545;
+}
+
+.action-status.unknown {
+  color: #6c757d;
+}
+
+.no-actions {
+  padding: 20px;
+  text-align: center;
+  color: #6c757d;
+  font-style: italic;
+  font-size: 14px;
+}
+
+@keyframes panelFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 /* 动画效果 */
@@ -197,6 +417,12 @@
   .bar-chart h2 {
     font-size: 20px;
     margin-bottom: 20px;
+  }
+  
+  .usage-instructions {
+    font-size: 13px;
+    margin-bottom: 20px;
+    padding: 10px 16px;
   }
   
   .chart-header {
@@ -265,9 +491,48 @@
     border-top-left-radius: 12px;
     border-bottom-left-radius: 12px;
   }
+
+  .action-panel-fixed {
+    width: 300px;
+    right: 15px;
+    top: 15px;
+  }
+  
+  .action-panel-header h4 {
+    font-size: 13px;
+  }
+  
+  .summary-stats span {
+    font-size: 11px;
+  }
+  
+  .hover-hint {
+    font-size: 9px;
+  }
+  
+  .action-item {
+    padding: 6px 10px;
+  }
+  
+  .action-time {
+    font-size: 11px;
+    min-width: 35px;
+    margin-right: 10px;
+  }
+  
+  .action-name {
+    font-size: 12px;
+  }
 }
 
 @media (max-width: 480px) {
+  .usage-instructions {
+    font-size: 12px;
+    margin-bottom: 15px;
+    padding: 8px 12px;
+    line-height: 1.3;
+  }
+  
   .chart-header {
     padding: 0 10px;
   }
@@ -316,5 +581,58 @@
   .bar-right:not([style*="width: 0"]):not([style*="width:0"]) {
     border-top-left-radius: 10px;
     border-bottom-left-radius: 10px;
+  }
+
+  .action-panel-fixed {
+    width: 280px;
+    max-height: 450px;
+    right: 10px;
+    top: 10px;
+  }
+  
+  .action-panel-header {
+    padding: 10px 12px;
+  }
+  
+  .action-panel-header h4 {
+    font-size: 12px;
+  }
+  
+  .close-btn {
+    font-size: 18px;
+    width: 20px;
+    height: 20px;
+  }
+  
+  .action-panel-summary {
+    padding: 6px 12px;
+  }
+  
+  .summary-stats span {
+    font-size: 10px;
+  }
+  
+  .hover-hint {
+    font-size: 8px;
+  }
+  
+  .action-item {
+    padding: 5px 8px;
+    margin-bottom: 3px;
+  }
+  
+  .action-time {
+    font-size: 10px;
+    min-width: 30px;
+    margin-right: 8px;
+  }
+  
+  .action-name {
+    font-size: 11px;
+  }
+  
+  .no-actions {
+    padding: 15px;
+    font-size: 12px;
   }
 }
