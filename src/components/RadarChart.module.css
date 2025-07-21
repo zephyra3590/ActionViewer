@@ -149,9 +149,8 @@
 /* 动作面板样式 */
 .action-panel-fixed {
   position: fixed;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  top: 20px;
+  right: 20px;
   background: white;
   border: 2px solid #4a90e2;
   border-radius: 8px;
@@ -306,6 +305,8 @@
   .action-panel-fixed {
     width: 95%;
     max-width: 350px;
+    top: 10px;
+    right: 2.5%;
   }
   
   .usage-instructions {
@@ -327,5 +328,12 @@
   
   .radar-chart h2 {
     font-size: 1.3em;
+  }
+  
+  .action-panel-fixed {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    width: auto;
   }
 }
