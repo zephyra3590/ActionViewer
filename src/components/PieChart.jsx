@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './PieChart.css';
+import styles from './PieChart.module.css';
 
 const PieChart = ({ gts, onActionClick, fps }) => {
   const [actionPanel, setActionPanel] = useState({
@@ -162,9 +162,9 @@ const PieChart = ({ gts, onActionClick, fps }) => {
   // 如果没有数据，显示空状态
   if (!gts || gts.length < 2) {
     return (
-      <div className="pie-charts">
+      <div className={styles['pie-charts']}>
         <h2>得点動作分布</h2>
-        <div className="empty-state">
+        <div className={styles['empty-state']}>
           データがありません
         </div>
       </div>
@@ -180,9 +180,9 @@ const PieChart = ({ gts, onActionClick, fps }) => {
   const renderPieChart = (data, title, playerId) => {
     if (!data || data.length === 0) {
       return (
-        <div className="pie-chart-container">
+        <div className={styles['pie-chart-container']}>
           <h3>{title}</h3>
-          <div className="no-data">得点データなし</div>
+          <div className={styles['no-data']}>得点データなし</div>
         </div>
       );
     }
@@ -286,11 +286,11 @@ const PieChart = ({ gts, onActionClick, fps }) => {
     };
     
     return (
-      <div className="pie-chart-container">
+      <div className={styles['pie-chart-container']}>
         <h3>{title}</h3>
-        <div className="pie-chart-content">
-          <div className="pie-chart-wrapper">
-            <svg width="427" height="427" className="pie-chart-svg">
+        <div className={styles['pie-chart-content']}>
+          <div className={styles['pie-chart-wrapper']}>
+            <svg width="427" height="427" className={styles['pie-chart-svg']}>
               {data.map((item, index) => {
                 const sliceAngle = (item.percentage / 100) * 360;
                 const startAngle = currentAngle;
@@ -310,7 +310,7 @@ const PieChart = ({ gts, onActionClick, fps }) => {
                     fill={colors[index]}
                     stroke="#fff"
                     strokeWidth="3"
-                    className="pie-slice"
+                    className={styles['pie-slice']}
                     onMouseEnter={(e) => handleMouseEnter(item, e)}
                     onMouseMove={(e) => handleMouseMove(item, e)}
                     onMouseLeave={handleMouseLeave}
@@ -321,7 +321,7 @@ const PieChart = ({ gts, onActionClick, fps }) => {
             </svg>
           </div>
           
-          <div className="total-wins">
+          <div className={styles['total-wins']}>
             総得点: {data.reduce((sum, item) => sum + item.value, 0)}回
           </div>
         </div>
@@ -330,7 +330,7 @@ const PieChart = ({ gts, onActionClick, fps }) => {
   };
   
   return (
-    <div className="pie-charts" onClick={() => {
+    <div className={styles['pie-charts']} onClick={() => {
       // 点击外部区域关闭动作面板（仅当不是悬停状态时）
       if (!actionPanel.isHovered) {
         setActionPanel({
@@ -344,12 +344,12 @@ const PieChart = ({ gts, onActionClick, fps }) => {
       }
     }}>
       <h2>得点動作分布</h2>
-      <div className="usage-instructions">
+      <div className={styles['usage-instructions']}>
         切片にマウスを合わせると詳細表示 | 
         クリックすると固定表示 | 
         Escキーまたは×ボタンで閉じる
       </div>
-      <div className="charts-container">
+      <div className={styles['charts-container']}>
         {renderPieChart(player1WinningData, "手前の選手", "player1")}
         {renderPieChart(player2WinningData, "奥の選手", "player2")}
       </div>
@@ -357,7 +357,7 @@ const PieChart = ({ gts, onActionClick, fps }) => {
       {/* 动态位置的面板 */}
       {actionPanel.visible && actionPanel.content && (
         <div 
-          className={actionPanel.isHovered ? "action-panel-hover" : "action-panel-fixed"}
+          className={actionPanel.isHovered ? styles['action-panel-hover'] : styles['action-panel-fixed']}
           style={actionPanel.isHovered ? {
             position: 'fixed',
             left: `${Math.min(actionPanel.position.x + 10, window.innerWidth - 320)}px`,
@@ -365,38 +365,38 @@ const PieChart = ({ gts, onActionClick, fps }) => {
             zIndex: 1002
           } : {}}
         >
-          <div className="action-panel-header">
+          <div className={styles['action-panel-header']}>
             <h4>{actionPanel.content.playerTitle} - {actionPanel.content.actionType}</h4>
-            <button className="close-btn" onClick={handlePanelClose}>×</button>
+            <button className={styles['close-btn']} onClick={handlePanelClose}>×</button>
           </div>
           
-          <div className="action-panel-summary">
-            <div className="summary-stats">
+          <div className={styles['action-panel-summary']}>
+            <div className={styles['summary-stats']}>
               <span>得点回数: {actionPanel.content.summary.value}回</span>
               <span>割合: {actionPanel.content.summary.percentage}%</span>
               <span>総得点: {actionPanel.content.summary.total}回</span>
             </div>
             {actionPanel.isHovered && !actionPanel.isFixed && (
-              <div className="hover-hint">クリックで固定表示</div>
+              <div className={styles['hover-hint']}>クリックで固定表示</div>
             )}
           </div>
           
-          <div className="action-panel-content">
+          <div className={styles['action-panel-content']}>
             {actionPanel.content.actions.length > 0 ? (
-              <div className="action-list">
+              <div className={styles['action-list']}>
                 {actionPanel.content.actions.map((action, index) => (
                   <div 
                     key={index}
-                    className="action-item"
+                    className={styles['action-item']}
                     onClick={(e) => handleActionItemClick(action, e)}
                   >
-                    <div className="action-time">{Math.floor(action.timeInSeconds / 60)}:{String(Math.floor(action.timeInSeconds % 60)).padStart(2, '0')}</div>
-                    <div className="action-name">{action.fullName}</div>
+                    <div className={styles['action-time']}>{Math.floor(action.timeInSeconds / 60)}:{String(Math.floor(action.timeInSeconds % 60)).padStart(2, '0')}</div>
+                    <div className={styles['action-name']}>{action.fullName}</div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="no-actions">この動作の得点データがありません</div>
+              <div className={styles['no-actions']}>この動作の得点データがありません</div>
             )}
           </div>
         </div>

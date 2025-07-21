@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './ActionList.css';
+import styles from './ActionList.module.css';
 import { 
   analyzeActionSuccess, 
   getResultIcon, 
@@ -35,20 +35,20 @@ const ActionList = ({ gts, onActionClick, fps }) => {
   const currentActions = getCurrentPlayerActions();
   
   return (
-    <div className="action-list">
+    <div className={styles['action-list']}>
       <h2>Action List</h2>
       
       {/* Tab切换区域 */}
-      <div className="tab-container">
-        <div className="tabs">
+      <div className={styles['tab-container']}>
+        <div className={styles.tabs}>
           <button 
-            className={`tab ${activeTab === 0 ? 'active' : ''}`}
+            className={`${styles.tab} ${activeTab === 0 ? styles.active : ''}`}
             onClick={() => setActiveTab(0)}
           >
             手前の選手
           </button>
           <button 
-            className={`tab ${activeTab === 1 ? 'active' : ''}`}
+            className={`${styles.tab} ${activeTab === 1 ? styles.active : ''}`}
             onClick={() => setActiveTab(1)}
           >
             奥の選手
@@ -67,12 +67,12 @@ const ActionList = ({ gts, onActionClick, fps }) => {
             <li 
               key={index}
               onClick={() => handleClick(action.start_id)}
-              className="action-item"
+              className={styles['action-item']}
             >
-              <span className="action-name">
+              <span className={styles['action-name']}>
                 {statusIcon} {action.label_names && action.label_names[0]}
               </span>
-              <span className="action-time">
+              <span className={styles['action-time']}>
                 {formatSecondsToTime(action.start_id)} - {formatSecondsToTime(action.end_id)}
               </span>
             </li>

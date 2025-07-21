@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import './RadarChart.css';
+import styles from './RadarChart.module.css';
 import { analyzeActionSuccess } from '../utils/ActionAnalyzer';
 
 const RadarChart = ({ gts, onActionClick, fps }) => {
@@ -322,9 +322,9 @@ const RadarChart = ({ gts, onActionClick, fps }) => {
   // 如果没有数据，显示空状态
   if (!gts || gts.length < 2) {
     return (
-      <div className="radar-chart">
+      <div className={styles['radar-chart']}>
         <h2>選手データ比較 (レーダーチャート)</h2>
-        <div className="empty-state">
+        <div className={styles['empty-state']}>
           データがありません
         </div>
       </div>
@@ -386,7 +386,7 @@ const RadarChart = ({ gts, onActionClick, fps }) => {
   const player2Path = generatePath(player2Data);
 
   return (
-    <div className="radar-chart" onClick={() => {
+    <div className={styles['radar-chart']} onClick={() => {
       if (!actionPanel.isHovered) {
         setActionPanel({
           visible: false,
@@ -400,25 +400,25 @@ const RadarChart = ({ gts, onActionClick, fps }) => {
     }}>
       <h2>選手データ比較 (レーダーチャート)</h2>
       
-      <div className="usage-instructions">
+      <div className={styles['usage-instructions']}>
         各点にマウスを合わせると概要表示 | クリックで詳細表示 | Escキーまたは×ボタンで閉じる
       </div>
       
-      <div className="chart-container">
-        <div className="legend">
-          <div className="legend-item">
-            <div className="legend-color player1"></div>
+      <div className={styles['chart-container']}>
+        <div className={styles.legend}>
+          <div className={styles['legend-item']}>
+            <div className={`${styles['legend-color']} ${styles.player1}`}></div>
             <span>手前の選手</span>
           </div>
-          <div className="legend-item">
-            <div className="legend-color player2"></div>
+          <div className={styles['legend-item']}>
+            <div className={`${styles['legend-color']} ${styles.player2}`}></div>
             <span>奥の選手</span>
           </div>
         </div>
         
-        <svg ref={svgRef} width={size} height={size} className="radar-svg">
+        <svg ref={svgRef} width={size} height={size} className={styles['radar-svg']}>
           {/* 背景网格 */}
-          <g className="grid">
+          <g className={styles.grid}>
             {/* 同心圆 */}
             {Array.from({ length: levels }, (_, i) => (
               <circle
@@ -467,7 +467,7 @@ const RadarChart = ({ gts, onActionClick, fps }) => {
           </g>
           
           {/* 先绘制多边形路径 */}
-          <g className="player1-path">
+          <g className={styles['player1-path']}>
             <path
               d={player1Path.pathData}
               fill="rgba(74, 144, 226, 0.3)"
@@ -476,7 +476,7 @@ const RadarChart = ({ gts, onActionClick, fps }) => {
             />
           </g>
           
-          <g className="player2-path">
+          <g className={styles['player2-path']}>
             <path
               d={player2Path.pathData}
               fill="rgba(231, 76, 60, 0.3)"
@@ -486,7 +486,7 @@ const RadarChart = ({ gts, onActionClick, fps }) => {
           </g>
           
           {/* 然后绘制所有数据点，使用更大的点击区域 */}
-          <g className="data-points">
+          <g className={styles['data-points']}>
             {/* Player 1 数据点 */}
             {player1Path.points.map((point, index) => (
               <g key={`p1-${index}`}>
@@ -511,7 +511,7 @@ const RadarChart = ({ gts, onActionClick, fps }) => {
                   fill="#4a90e2"
                   stroke="#fff"
                   strokeWidth="2"
-                  className="data-point-visual"
+                  className={styles['data-point-visual']}
                   style={{ pointerEvents: 'none' }}
                 />
               </g>
@@ -541,7 +541,7 @@ const RadarChart = ({ gts, onActionClick, fps }) => {
                   fill="#e74c3c"
                   stroke="#fff"
                   strokeWidth="2"
-                  className="data-point-visual"
+                  className={styles['data-point-visual']}
                   style={{ pointerEvents: 'none' }}
                 />
               </g>
@@ -560,7 +560,7 @@ const RadarChart = ({ gts, onActionClick, fps }) => {
                 fill="#333"
                 textAnchor="middle"
                 dominantBaseline="middle"
-                className="dimension-label"
+                className={styles['dimension-label']}
               >
                 {dim.jpLabel}
               </text>
@@ -572,7 +572,7 @@ const RadarChart = ({ gts, onActionClick, fps }) => {
       {/* 悬停提示框 - 使用简化样式 */}
       {hoverTooltip.visible && hoverTooltip.content && (
         <div 
-          className="hover-tooltip-simple"
+          className={styles['hover-tooltip-simple']}
           style={{
             position: 'fixed',
             left: `${hoverTooltip.position.x}px`,
@@ -617,36 +617,36 @@ const RadarChart = ({ gts, onActionClick, fps }) => {
 
       {/* 动作详情面板 */}
       {actionPanel.visible && actionPanel.content && (
-        <div className="action-panel-fixed">
-          <div className="action-panel-header">
+        <div className={styles['action-panel-fixed']}>
+          <div className={styles['action-panel-header']}>
             <h4>{actionPanel.content.playerTitle} - {actionPanel.content.actionType}</h4>
-            <button className="close-btn" onClick={handlePanelClose}>×</button>
+            <button className={styles['close-btn']} onClick={handlePanelClose}>×</button>
           </div>
           
-          <div className="action-panel-summary">
-            <div className="summary-stats">
+          <div className={styles['action-panel-summary']}>
+            <div className={styles['summary-stats']}>
               <span>総数: {actionPanel.content.summary.total}回</span>
               <span>成功: {actionPanel.content.summary.successful}回</span>
               <span>成功率: {actionPanel.content.summary.successRate}%</span>
             </div>
           </div>
           
-          <div className="action-panel-content">
+          <div className={styles['action-panel-content']}>
             {actionPanel.content.actions.length > 0 ? (
-              <div className="action-list">
+              <div className={styles['action-list']}>
                 {actionPanel.content.actions.map((action, index) => (
                   <div 
                     key={index}
-                    className="action-item"
+                    className={styles['action-item']}
                     onClick={(e) => handleActionItemClick(action, e)}
                   >
-                    <div className="action-time">
+                    <div className={styles['action-time']}>
                       {Math.floor(action.timeInSeconds / 60)}:
                       {String(Math.floor(action.timeInSeconds % 60)).padStart(2, '0')}
                     </div>
-                    <div className="action-name">
+                    <div className={styles['action-name']}>
                       {action.fullName}
-                      <span className={`action-status ${action.success}`}>
+                      <span className={`${styles['action-status']} ${styles[action.success]}`}>
                         {action.success === 'success' ? '✓' : '✗'}
                       </span>
                     </div>
@@ -654,7 +654,7 @@ const RadarChart = ({ gts, onActionClick, fps }) => {
                 ))}
               </div>
             ) : (
-              <div className="no-actions">この動作のデータがありません</div>
+              <div className={styles['no-actions']}>この動作のデータがありません</div>
             )}
           </div>
         </div>

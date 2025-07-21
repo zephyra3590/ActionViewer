@@ -1,5 +1,5 @@
 import { useRef, useEffect } from 'react';
-import './VideoPlayer.css';
+import styles from './VideoPlayer.module.css';
 
 const VideoPlayer = ({ videoUrl, currentFrame, fps }) => {
   const videoRef = useRef(null);
@@ -13,7 +13,7 @@ const VideoPlayer = ({ videoUrl, currentFrame, fps }) => {
   }, [currentFrame, fps]);
 
   return (
-    <div className="video-player">
+    <div className={styles['video-player']}>
       <video 
         ref={videoRef} 
         controls 

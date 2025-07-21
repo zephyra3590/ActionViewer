@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import './BarChart.css';
+import styles from './BarChart.module.css';
 import { analyzeActionSuccess } from '../utils/ActionAnalyzer';
 
 const BarChart = ({ gts, onActionClick, fps }) => {
@@ -467,9 +467,9 @@ const BarChart = ({ gts, onActionClick, fps }) => {
   // 如果没有数据，显示空状态
   if (!gts || gts.length < 2) {
     return (
-      <div className="bar-chart">
+      <div className={styles['bar-chart']}>
         <h2>選手データ比較</h2>
-        <div className="empty-state">
+        <div className={styles['empty-state']}>
           データがありません
         </div>
       </div>
@@ -605,7 +605,7 @@ const BarChart = ({ gts, onActionClick, fps }) => {
   ];
   
   return (
-    <div className="bar-chart" onClick={() => {
+    <div className={styles['bar-chart']} onClick={() => {
       // 点击外部区域关闭动作面板（仅当不是悬停状态时）
       if (!actionPanel.isHovered) {
         setActionPanel({
@@ -621,27 +621,27 @@ const BarChart = ({ gts, onActionClick, fps }) => {
       <h2>選手データ比較 (成功率)</h2>
       
       {/* 使用说明 */}
-      <div className="usage-instructions">
+      <div className={styles['usage-instructions']}>
         柱にマウスを合わせると詳細表示 | 
         クリックすると固定表示 | 
         Escキーまたは×ボタンで閉じる
       </div>
       
       {/* 选手头部信息 */}
-      <div className="chart-header">
-        <div className="player-header">
-          <div className="player-name">手前の選手</div>
-          <div className="player-description">
+      <div className={styles['chart-header']}>
+        <div className={styles['player-header']}>
+          <div className={styles['player-name']}>手前の選手</div>
+          <div className={styles['player-description']}>
             近い位置にいる選手の<br />
             パフォーマンス統計
           </div>
         </div>
         
-        <div className="vs-divider">VS</div>
+        <div className={styles['vs-divider']}>VS</div>
         
-        <div className="player-header">
-          <div className="player-name">奥の選手</div>
-          <div className="player-description">
+        <div className={styles['player-header']}>
+          <div className={styles['player-name']}>奥の選手</div>
+          <div className={styles['player-description']}>
             遠い位置にいる選手の<br />
             パフォーマンス統計
           </div>
@@ -655,12 +655,12 @@ const BarChart = ({ gts, onActionClick, fps }) => {
         const player2Width = Math.min((data.player2Value / data.maxValue) * 100, 100);
         
         return (
-          <div key={index} className="chart-row">
-            <div className="chart-row-label">{data.label}</div>
-            <div className="chart-container">
-              <div className="chart-left">
+          <div key={index} className={styles['chart-row']}>
+            <div className={styles['chart-row-label']}>{data.label}</div>
+            <div className={styles['chart-container']}>
+              <div className={styles['chart-left']}>
                 <div 
-                  className="bar-left" 
+                  className={styles['bar-left']} 
                   style={{ 
                     width: `${player1Width}%`,
                     '--target-width': `${player1Width}%`
@@ -678,9 +678,9 @@ const BarChart = ({ gts, onActionClick, fps }) => {
                   )}
                 </div>
               </div>
-              <div className="chart-right">
+              <div className={styles['chart-right']}>
                 <div 
-                  className="bar-right" 
+                  className={styles['bar-right']} 
                   style={{ 
                     width: `${player2Width}%`,
                     '--target-width': `${player2Width}%`
@@ -706,7 +706,7 @@ const BarChart = ({ gts, onActionClick, fps }) => {
       {/* 动态位置的面板 */}
       {actionPanel.visible && actionPanel.content && (
         <div 
-          className={actionPanel.isHovered ? "action-panel-hover" : "action-panel-fixed"}
+          className={actionPanel.isHovered ? styles['action-panel-hover'] : styles['action-panel-fixed']}
           style={actionPanel.isHovered ? {
             position: 'fixed',
             left: `${Math.min(actionPanel.position.x + 10, window.innerWidth - 320)}px`,
@@ -714,38 +714,38 @@ const BarChart = ({ gts, onActionClick, fps }) => {
             zIndex: 1002
           } : {}}
         >
-          <div className="action-panel-header">
+          <div className={styles['action-panel-header']}>
             <h4>{actionPanel.content.playerTitle} - {actionPanel.content.actionType}</h4>
-            <button className="close-btn" onClick={handlePanelClose}>×</button>
+            <button className={styles['close-btn']} onClick={handlePanelClose}>×</button>
           </div>
           
-          <div className="action-panel-summary">
-            <div className="summary-stats">
+          <div className={styles['action-panel-summary']}>
+            <div className={styles['summary-stats']}>
               <span>総数: {actionPanel.content.summary.total}回</span>
               <span>成功: {actionPanel.content.summary.successful}回</span>
               <span>成功率: {actionPanel.content.summary.successRate}%</span>
             </div>
             {actionPanel.isHovered && !actionPanel.isFixed && (
-              <div className="hover-hint">クリックで固定表示</div>
+              <div className={styles['hover-hint']}>クリックで固定表示</div>
             )}
           </div>
           
-          <div className="action-panel-content">
+          <div className={styles['action-panel-content']}>
             {actionPanel.content.actions.length > 0 ? (
-              <div className="action-list">
+              <div className={styles['action-list']}>
                 {actionPanel.content.actions.map((action, index) => (
                   <div 
                     key={index}
-                    className="action-item"
+                    className={styles['action-item']}
                     onClick={(e) => handleActionItemClick(action, e)}
                   >
-                    <div className="action-time">
+                    <div className={styles['action-time']}>
                       {Math.floor(action.timeInSeconds / 60)}:
                       {String(Math.floor(action.timeInSeconds % 60)).padStart(2, '0')}
                     </div>
-                    <div className="action-name">
+                    <div className={styles['action-name']}>
                       {action.fullName}
-                      <span className={`action-status ${action.success}`}>
+                      <span className={`${styles['action-status']} ${styles[action.success]}`}>
                         {action.success === 'success' ? '✓' : '✗'}
                       </span>
                     </div>
@@ -753,7 +753,7 @@ const BarChart = ({ gts, onActionClick, fps }) => {
                 ))}
               </div>
             ) : (
-              <div className="no-actions">この動作のデータがありません</div>
+              <div className={styles['no-actions']}>この動作のデータがありません</div>
             )}
           </div>
         </div>
