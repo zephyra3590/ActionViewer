@@ -354,10 +354,10 @@ const RadarChart = ({ gts, onActionClick, fps }) => {
   const player1Data = dimensions.map(dim => calculateActionStats(player1Actions, dim.key));
   const player2Data = dimensions.map(dim => calculateActionStats(player2Actions, dim.key));
 
-  // SVG 配置
-  const size = 400;
-  const center = size / 2;
-  const maxRadius = 150;
+  // SVG 配置 - 放大1.5倍
+  const size = 600; // 从400增加到600
+  const center = size / 2; // 300
+  const maxRadius = 225; // 从150增加到225
   const levels = 5; // 5个同心圆
 
   // 计算多边形的点
@@ -456,7 +456,7 @@ const RadarChart = ({ gts, onActionClick, fps }) => {
                   key={i}
                   x={center + 5}
                   y={center - ((maxRadius * (i + 1)) / levels)}
-                  fontSize="10"
+                  fontSize="12" // 从10增加到12
                   fill="#999"
                   textAnchor="start"
                 >
@@ -472,7 +472,7 @@ const RadarChart = ({ gts, onActionClick, fps }) => {
               d={player1Path.pathData}
               fill="rgba(74, 144, 226, 0.3)"
               stroke="#4a90e2"
-              strokeWidth="2"
+              strokeWidth="3" // 从2增加到3
             />
           </g>
           
@@ -481,7 +481,7 @@ const RadarChart = ({ gts, onActionClick, fps }) => {
               d={player2Path.pathData}
               fill="rgba(231, 76, 60, 0.3)"
               stroke="#e74c3c"
-              strokeWidth="2"
+              strokeWidth="3" // 从2增加到3
             />
           </g>
           
@@ -494,7 +494,7 @@ const RadarChart = ({ gts, onActionClick, fps }) => {
                 <circle
                   cx={point.x}
                   cy={point.y}
-                  r="12"
+                  r="18" // 从12增加到18
                   fill="transparent"
                   stroke="none"
                   style={{ cursor: 'pointer' }}
@@ -507,10 +507,10 @@ const RadarChart = ({ gts, onActionClick, fps }) => {
                 <circle
                   cx={point.x}
                   cy={point.y}
-                  r="6"
+                  r="9" // 从6增加到9
                   fill="#4a90e2"
                   stroke="#fff"
-                  strokeWidth="2"
+                  strokeWidth="3" // 从2增加到3
                   className={styles['data-point-visual']}
                   style={{ pointerEvents: 'none' }}
                 />
@@ -524,7 +524,7 @@ const RadarChart = ({ gts, onActionClick, fps }) => {
                 <circle
                   cx={point.x}
                   cy={point.y}
-                  r="12"
+                  r="18" // 从12增加到18
                   fill="transparent"
                   stroke="none"
                   style={{ cursor: 'pointer' }}
@@ -537,10 +537,10 @@ const RadarChart = ({ gts, onActionClick, fps }) => {
                 <circle
                   cx={point.x}
                   cy={point.y}
-                  r="6"
+                  r="9" // 从6增加到9
                   fill="#e74c3c"
                   stroke="#fff"
-                  strokeWidth="2"
+                  strokeWidth="3" // 从2增加到3
                   className={styles['data-point-visual']}
                   style={{ pointerEvents: 'none' }}
                 />
@@ -556,7 +556,7 @@ const RadarChart = ({ gts, onActionClick, fps }) => {
                 key={index}
                 x={labelPoint.x}
                 y={labelPoint.y}
-                fontSize="12"
+                fontSize="14" // 从12增加到14
                 fill="#333"
                 textAnchor="middle"
                 dominantBaseline="middle"

@@ -83,34 +83,34 @@
 
 .radar-svg .grid text {
   font-family: Arial, sans-serif;
-  font-size: 10px;
+  font-size: 12px; /* 从10px增加到12px */
   fill: #999;
 }
 
 .radar-svg .player1-path path {
   fill: rgba(74, 144, 226, 0.3);
   stroke: #4a90e2;
-  stroke-width: 2;
+  stroke-width: 3; /* 从2增加到3 */
   transition: all 0.3s ease;
 }
 
 .radar-svg .player1-path:hover path {
   fill: rgba(74, 144, 226, 0.5);
   stroke: #357abd;
-  stroke-width: 3;
+  stroke-width: 4; /* 从3增加到4 */
 }
 
 .radar-svg .player2-path path {
   fill: rgba(231, 76, 60, 0.3);
   stroke: #e74c3c;
-  stroke-width: 2;
+  stroke-width: 3; /* 从2增加到3 */
   transition: all 0.3s ease;
 }
 
 .radar-svg .player2-path:hover path {
   fill: rgba(231, 76, 60, 0.5);
   stroke: #c0392b;
-  stroke-width: 3;
+  stroke-width: 4; /* 从3增加到4 */
 }
 
 .radar-svg .data-point-visual {
@@ -118,14 +118,14 @@
 }
 
 .radar-svg .data-points g:hover .data-point-visual {
-  r: 8;
-  stroke-width: 3;
+  r: 12; /* 从8增加到12 */
+  stroke-width: 4; /* 从3增加到4 */
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
 
 .radar-svg .dimension-label {
   font-family: Arial, sans-serif;
-  font-size: 12px;
+  font-size: 14px; /* 从12px增加到14px */
   fill: #333;
   font-weight: bold;
   text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
@@ -283,7 +283,7 @@
   font-style: italic;
 }
 
-/* 响应式设计 */
+/* 响应式设计 - 更新尺寸 */
 @media (max-width: 768px) {
   .radar-chart {
     margin: 10px 0;
@@ -299,8 +299,8 @@
   }
   
   .radar-svg {
-    width: 350px;
-    height: 350px;
+    width: 525px; /* 从350px增加到525px (1.5倍) */
+    height: 525px;
   }
   
   .action-panel-fixed {
@@ -316,8 +316,8 @@
 
 @media (max-width: 480px) {
   .radar-svg {
-    width: 300px;
-    height: 300px;
+    width: 450px; /* 从300px增加到450px (1.5倍) */
+    height: 450px;
   }
   
   .legend {
