@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import VideoPlayer from './components/VideoPlayer';
 import ActionList from './components/ActionList';
-import BarChart from './components/BarChart';
+import RadarChart from './components/RadarChart'; // 替换 BarChart
 import PieChart from './components/PieChart';
 import PieChart2 from './components/PieChart2';
 import { analyzeAllPlayersActions } from './utils/ActionAnalyzer';
@@ -24,7 +24,7 @@ function App() {
   const [canDownloadJson, setCanDownloadJson] = useState(false);
   
   // Define version and build time
-  const VERSION = "1.6.0"; // 版本号更新，添加了失分饼图
+  const VERSION = "1.7.0"; // 版本号更新，将柱状图改为雷达图
   const BUILD_TIME = new Date().toLocaleString();
   
   const setUploadStatus = (status) => {
@@ -367,9 +367,9 @@ function App() {
           </div>
         )}
         
-        {/* 添加条形图组件 */}
+        {/* 添加雷达图组件 (替换原来的柱状图) */}
         {videoData && videoData.gts && (
-          <BarChart 
+          <RadarChart 
             gts={videoData.gts} 
             onActionClick={handleActionClick}
             fps={fps}
