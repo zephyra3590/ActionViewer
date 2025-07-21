@@ -99,7 +99,7 @@ const RadarChart = ({ gts, onActionClick, fps }) => {
 
   // 计算各种动作的成功率
   const calculateActionStats = (actions, actionType) => {
-    if (!actions || actions.length === 0) return { total: 0, success: 0, rate: 0 };
+    if (!actions || actions.length === 0) return { total: 0, success: 0, rate: 100 };
     
     let filteredActions = [];
     
@@ -163,7 +163,7 @@ const RadarChart = ({ gts, onActionClick, fps }) => {
       filteredActions = actions;
     }
     
-    if (filteredActions.length === 0) return { total: 0, success: 0, rate: 0 };
+    if (filteredActions.length === 0) return { total: 0, success: 0, rate: 100 };
     
     const successfulActions = filteredActions.filter(action => 
       analyzeActionSuccess(action, actions) === 'success'
@@ -596,9 +596,15 @@ const RadarChart = ({ gts, onActionClick, fps }) => {
             {hoverTooltip.content.actionType}
           </div>
           <div style={{ fontSize: '12px' }}>
-            <div>総数: {hoverTooltip.content.stats.total}回</div>
-            <div>成功: {hoverTooltip.content.stats.success}回</div>
-            <div>成功率: {hoverTooltip.content.stats.rate}%</div>
+            {hoverTooltip.content.stats.total === 0 ? (
+              <div style={{ textAlign: 'center', color: '#ccc' }}>データなし</div>
+            ) : (
+              <>
+                <div>総数: {hoverTooltip.content.stats.total}回</div>
+                <div>成功: {hoverTooltip.content.stats.success}回</div>
+                <div>成功率: {hoverTooltip.content.stats.rate}%</div>
+              </>
+            )}
           </div>
           {/* 小三角箭头 */}
           <div style={{
@@ -625,9 +631,15 @@ const RadarChart = ({ gts, onActionClick, fps }) => {
           
           <div className={styles['action-panel-summary']}>
             <div className={styles['summary-stats']}>
-              <span>総数: {actionPanel.content.summary.total}回</span>
-              <span>成功: {actionPanel.content.summary.successful}回</span>
-              <span>成功率: {actionPanel.content.summary.successRate}%</span>
+              {actionPanel.content.summary.total === 0 ? (
+                <span style={{ color: '#999' }}>データなし</span>
+              ) : (
+                <>
+                  <span>総数: {actionPanel.content.summary.total}回</span>
+                  <span>成功: {actionPanel.content.summary.successful}回</span>
+                  <span>成功率: {actionPanel.content.summary.successRate}%</span>
+                </>
+              )}
             </div>
           </div>
           
